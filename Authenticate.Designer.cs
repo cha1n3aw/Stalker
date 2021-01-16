@@ -29,7 +29,9 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MetroAuthForm));
+#pragma warning disable CS0618 // Type or member is obsolete
             this.ChrBrowser = new CefSharp.WinForms.ChromiumWebBrowser();
+#pragma warning restore CS0618 // Type or member is obsolete
             this.SuspendLayout();
             // 
             // ChrBrowser

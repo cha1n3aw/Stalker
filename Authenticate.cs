@@ -14,6 +14,7 @@ namespace Stalker
         private string AuthUri = "https://oauth.vk.com/authorize?";
         private int APPid = 7482854; //7482854 fox 2685278 kate mobile
         private string APIversion = "5.126";
+        internal bool ClearCookies = false;
         public string Token { get; private set; }
         public MetroAuthForm()
         {
@@ -39,6 +40,7 @@ namespace Stalker
                 var parameters = (from param in uri.Split('#')[1].Split('&') let parts = param.Split('=') select new { Name = parts[0], Value = parts[1] }).ToDictionary(v => v.Name, v => v.Value);
                 Token = parameters["access_token"];
                 DialogResult = DialogResult.Yes;
+                if (ClearCookies) Cef.GetGlobalCookieManager().DeleteCookies("", "");
             }
             catch (Exception) { DialogResult = DialogResult.No; }
         }

@@ -21,7 +21,7 @@ namespace Stalker
         private static string server_response = String.Empty;
         private List<string> FriendsIdList = new List<string>();
         private List<string> CustomIdList = new List<string>();
-        private int user_id = 0; //622562260;//135917804;//193640924; 152795057
+        private int user_id = 0;
         string DateTime = string.Empty;
         string TimeShort = string.Empty;
         Thread polling;
@@ -37,13 +37,21 @@ namespace Stalker
                 FriendsIdList.Add((string)friendsl.items[i].id);
                 friends.Items.Add($"{friendsl.items[i].first_name} {friendsl.items[i].last_name}");
             }
+            Get($"{ApiRequestLink}users.get?user_ids={ConfigurationManager.AppSettings["CustomIDs"]}&access_token={AuthToken}&v=5.126");
+            dynamic customusers = JObject.Parse(server_response);
+            foreach (var user in customusers.response)
+            {
+                FriendsIdList.Add((string)user.id);
+                friends.Items.Add($"{user.first_name} {user.last_name}");
+            }
         }
         private void LogInVK() 
         {
             MetroAuthForm AuthForm = new MetroAuthForm();
+            if (ClearCookies.Checked) AuthForm.ClearCookies = true;
             if (AuthForm.ShowDialog() == DialogResult.Yes)
             {
-                AuthToken = AuthForm.Token;
+                AuthToken = AuthForm.Token; 
                 FetchFriends();
             }
             else if (Application.MessageLoop) Application.Exit();
@@ -362,28 +370,6 @@ namespace Stalker
                     EventLogs.Text = File.ReadAllText(Application.StartupPath + $"\\{user_id}.txt");
                 }
         }
-        private async void AddCustomIdClicked(object sender, EventArgs e)
-        {
-            if (int.TryParse(customuserid.Text, out int id))
-            {
-                try
-                {
-                    Get($"{ApiRequestLink}users.get?user_ids={id}&access_token={AuthToken}&v=5.126");
-                    dynamic decodedresponse = JObject.Parse(server_response);
-                    var decoded = decodedresponse.response[0];
-                    if (!CustomIdList.Contains(id.ToString()) && !FriendsIdList.Contains(id.ToString()))
-                    {
-                        CustomIdList.Add(id.ToString());
-                        friends.Items.Add($"{decoded.first_name} {decoded.last_name}");
-                        customuserid.Text = "";
-                    }
-                    AddCustomId.Enabled = false;
-                    await Task.Delay(1000);
-                    AddCustomId.Enabled = true;
-                }
-                catch (Exception) { }
-            }
-        }
         private void StartStop_CheckedChanged(object sender, EventArgs e)
         {
             if (StartStop.Checked) 
@@ -428,8 +414,8 @@ namespace Stalker
         }
         private void OpenSettings_CheckedChanged(object sender, EventArgs e)
         {
-            if(OpenSettings.Checked) Size = new System.Drawing.Size(643, 374);
-            else Size = new System.Drawing.Size(509, 374);
+            if(OpenSettings.Checked) Size = new System.Drawing.Size(643, 413);
+            else Size = new System.Drawing.Size(509, 413);
         }
         private void OnPowerChange(object s, PowerModeChangedEventArgs e)
         {
@@ -457,8 +443,12 @@ namespace Stalker
                 foreach (string id in CustomIdList) temp_ids = temp_ids + id + ",";
                 temp_ids = temp_ids.TrimEnd(',');
             }
+            string savetoken = "";
+            if (SaveToken.Checked) savetoken = AuthToken;
             var settingslist = new List<KeyValuePair<string, string>>()
             {
+                new KeyValuePair<string, string>("AuthToken", savetoken),
+                new KeyValuePair<string, string>("SaveToken", SaveToken.Checked.ToString()),
                 new KeyValuePair<string, string>("CustomIDs", temp_ids),
                 new KeyValuePair<string, string>("Logs", Logs.Checked.ToString()),
                 new KeyValuePair<string, string>("NoSleep", PreventSleep.Checked.ToString()),
@@ -475,19 +465,14 @@ namespace Stalker
                 new KeyValuePair<string, string>("Videos", CheckVideos.Checked.ToString()),
                 new KeyValuePair<string, string>("ClipsFollowers", CheckClips.Checked.ToString()),
                 new KeyValuePair<string, string>("OpenSettings", OpenSettings.Checked.ToString()),
+                new KeyValuePair<string, string>("ClearCookies", ClearCookies.Checked.ToString()),
             };
             return settingslist;
         }
         private void LoadSettings()
         {
+            Size = new System.Drawing.Size(509, 413);
             SystemEvents.PowerModeChanged += OnPowerChange;
-            Get($"{ApiRequestLink}users.get?user_ids={ConfigurationManager.AppSettings["CustomIDs"]}&access_token={AuthToken}&v=5.126");
-            dynamic decodedresponse = JObject.Parse(server_response);
-            foreach (var decoded in decodedresponse.response)
-            {
-                FriendsIdList.Add((string)decoded.id);
-                friends.Items.Add($"{decoded.first_name} {decoded.last_name}");
-            }
             Logs.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Logs"]);
             PreventSleep.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["NoSleep"]);
             CheckOnlineDevice.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["OnlineDevice"]);
@@ -503,13 +488,36 @@ namespace Stalker
             CheckVideos.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Videos"]);
             CheckClips.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClipsFollowers"]);
             OpenSettings.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["OpenSettings"]);
+            AuthToken = ConfigurationManager.AppSettings["AuthToken"];
+            SaveToken.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["SaveToken"]);
+            ClearCookies.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClearCookies"]);
+            if (SaveToken.Checked && AuthToken != "") FetchFriends();
+            else LogInVK();
         }
         public Stalker()
         {
             InitializeComponent();
-            Size = new System.Drawing.Size(509, 374);
-            LogInVK();
             LoadSettings();
+        }
+
+        private void customuserid_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter && int.TryParse(customuserid.Text, out int id))
+            {
+                try
+                {
+                    Get($"{ApiRequestLink}users.get?user_ids={id}&access_token={AuthToken}&v=5.126");
+                    dynamic decodedresponse = JObject.Parse(server_response);
+                    var decoded = decodedresponse.response[0];
+                    if (!CustomIdList.Contains(id.ToString()) && !FriendsIdList.Contains(id.ToString()))
+                    {
+                        CustomIdList.Add(id.ToString());
+                        friends.Items.Add($"{decoded.first_name} {decoded.last_name}");
+                        customuserid.Text = "";
+                    }
+                }
+                catch (Exception) { }
+            }
         }
     }
     public class Counters

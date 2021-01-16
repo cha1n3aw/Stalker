@@ -39,7 +39,6 @@
             this.StalkerTrayIcon = new System.Windows.Forms.NotifyIcon(this.components);
             this.PreventSleep = new MetroFramework.Controls.MetroToggle();
             this.metroLabel2 = new MetroFramework.Controls.MetroLabel();
-            this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
             this.StartStopLabel = new MetroFramework.Controls.MetroLabel();
             this.OpenSettings = new MetroFramework.Controls.MetroToggle();
             this.metroLabel4 = new MetroFramework.Controls.MetroLabel();
@@ -67,7 +66,10 @@
             this.CheckStatus = new MetroFramework.Controls.MetroToggle();
             this.metroLabel16 = new MetroFramework.Controls.MetroLabel();
             this.CheckOnlineDevice = new MetroFramework.Controls.MetroToggle();
-            this.AddCustomId = new MetroFramework.Controls.MetroButton();
+            this.metroLabel17 = new MetroFramework.Controls.MetroLabel();
+            this.SaveToken = new MetroFramework.Controls.MetroToggle();
+            this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
+            this.ClearCookies = new MetroFramework.Controls.MetroToggle();
             this.SuspendLayout();
             // 
             // friends
@@ -78,7 +80,8 @@
             this.friends.ItemHeight = 29;
             this.friends.Location = new System.Drawing.Point(23, 63);
             this.friends.Name = "friends";
-            this.friends.Size = new System.Drawing.Size(198, 35);
+            this.friends.PromptText = "Select User";
+            this.friends.Size = new System.Drawing.Size(267, 35);
             this.friends.Style = MetroFramework.MetroColorStyle.Black;
             this.friends.TabIndex = 0;
             this.friends.Theme = MetroFramework.MetroThemeStyle.Dark;
@@ -91,7 +94,7 @@
             // 
             // 
             this.customuserid.CustomButton.Image = null;
-            this.customuserid.CustomButton.Location = new System.Drawing.Point(47, 2);
+            this.customuserid.CustomButton.Location = new System.Drawing.Point(70, 2);
             this.customuserid.CustomButton.Name = "";
             this.customuserid.CustomButton.Size = new System.Drawing.Size(15, 15);
             this.customuserid.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
@@ -100,23 +103,26 @@
             this.customuserid.CustomButton.UseSelectable = true;
             this.customuserid.CustomButton.Visible = false;
             this.customuserid.Lines = new string[0];
-            this.customuserid.Location = new System.Drawing.Point(227, 78);
+            this.customuserid.Location = new System.Drawing.Point(296, 78);
             this.customuserid.MaxLength = 32767;
             this.customuserid.Name = "customuserid";
             this.customuserid.PasswordChar = '\0';
+            this.customuserid.PromptText = "Custom ID";
             this.customuserid.ScrollBars = System.Windows.Forms.ScrollBars.None;
             this.customuserid.SelectedText = "";
             this.customuserid.SelectionLength = 0;
             this.customuserid.SelectionStart = 0;
             this.customuserid.ShortcutsEnabled = true;
-            this.customuserid.Size = new System.Drawing.Size(65, 20);
+            this.customuserid.Size = new System.Drawing.Size(88, 20);
             this.customuserid.Style = MetroFramework.MetroColorStyle.Black;
             this.customuserid.TabIndex = 1;
             this.customuserid.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
             this.customuserid.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.customuserid.UseSelectable = true;
+            this.customuserid.WaterMark = "Custom ID";
             this.customuserid.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
-            this.customuserid.WaterMarkFont = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Italic, System.Drawing.GraphicsUnit.Pixel);
+            this.customuserid.WaterMarkFont = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.customuserid.KeyDown += new System.Windows.Forms.KeyEventHandler(this.customuserid_KeyDown);
             // 
             // EventLogs
             // 
@@ -124,9 +130,9 @@
             // 
             // 
             this.EventLogs.CustomButton.Image = null;
-            this.EventLogs.CustomButton.Location = new System.Drawing.Point(217, 1);
+            this.EventLogs.CustomButton.Location = new System.Drawing.Point(179, 2);
             this.EventLogs.CustomButton.Name = "";
-            this.EventLogs.CustomButton.Size = new System.Drawing.Size(245, 245);
+            this.EventLogs.CustomButton.Size = new System.Drawing.Size(281, 281);
             this.EventLogs.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
             this.EventLogs.CustomButton.TabIndex = 1;
             this.EventLogs.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
@@ -143,7 +149,7 @@
             this.EventLogs.SelectionLength = 0;
             this.EventLogs.SelectionStart = 0;
             this.EventLogs.ShortcutsEnabled = true;
-            this.EventLogs.Size = new System.Drawing.Size(463, 247);
+            this.EventLogs.Size = new System.Drawing.Size(463, 286);
             this.EventLogs.Style = MetroFramework.MetroColorStyle.Black;
             this.EventLogs.TabIndex = 2;
             this.EventLogs.Theme = MetroFramework.MetroThemeStyle.Dark;
@@ -155,7 +161,7 @@
             // StartStop
             // 
             this.StartStop.DisplayStatus = false;
-            this.StartStop.Location = new System.Drawing.Point(349, 78);
+            this.StartStop.Location = new System.Drawing.Point(390, 78);
             this.StartStop.Name = "StartStop";
             this.StartStop.Size = new System.Drawing.Size(45, 20);
             this.StartStop.Style = MetroFramework.MetroColorStyle.Black;
@@ -225,23 +231,11 @@
             this.metroLabel2.Text = "NoSleep";
             this.metroLabel2.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
-            // metroLabel3
-            // 
-            this.metroLabel3.AutoSize = true;
-            this.metroLabel3.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel3.Location = new System.Drawing.Point(227, 60);
-            this.metroLabel3.Name = "metroLabel3";
-            this.metroLabel3.Size = new System.Drawing.Size(60, 15);
-            this.metroLabel3.Style = MetroFramework.MetroColorStyle.Black;
-            this.metroLabel3.TabIndex = 11;
-            this.metroLabel3.Text = "Custom ID";
-            this.metroLabel3.Theme = MetroFramework.MetroThemeStyle.Dark;
-            // 
             // StartStopLabel
             // 
             this.StartStopLabel.AutoSize = true;
             this.StartStopLabel.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.StartStopLabel.Location = new System.Drawing.Point(356, 60);
+            this.StartStopLabel.Location = new System.Drawing.Point(397, 60);
             this.StartStopLabel.Name = "StartStopLabel";
             this.StartStopLabel.Size = new System.Drawing.Size(32, 15);
             this.StartStopLabel.Style = MetroFramework.MetroColorStyle.Black;
@@ -252,7 +246,7 @@
             // OpenSettings
             // 
             this.OpenSettings.DisplayStatus = false;
-            this.OpenSettings.Location = new System.Drawing.Point(400, 78);
+            this.OpenSettings.Location = new System.Drawing.Point(441, 78);
             this.OpenSettings.Name = "OpenSettings";
             this.OpenSettings.Size = new System.Drawing.Size(45, 20);
             this.OpenSettings.Style = MetroFramework.MetroColorStyle.Black;
@@ -266,7 +260,7 @@
             // 
             this.metroLabel4.AutoSize = true;
             this.metroLabel4.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel4.Location = new System.Drawing.Point(400, 60);
+            this.metroLabel4.Location = new System.Drawing.Point(441, 60);
             this.metroLabel4.Name = "metroLabel4";
             this.metroLabel4.Size = new System.Drawing.Size(47, 15);
             this.metroLabel4.Style = MetroFramework.MetroColorStyle.Black;
@@ -586,24 +580,63 @@
             this.CheckOnlineDevice.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.CheckOnlineDevice.UseSelectable = true;
             // 
-            // AddCustomId
+            // metroLabel17
             // 
-            this.AddCustomId.Location = new System.Drawing.Point(298, 78);
-            this.AddCustomId.Name = "AddCustomId";
-            this.AddCustomId.Size = new System.Drawing.Size(45, 20);
-            this.AddCustomId.Style = MetroFramework.MetroColorStyle.Black;
-            this.AddCustomId.TabIndex = 39;
-            this.AddCustomId.Text = "Add";
-            this.AddCustomId.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.AddCustomId.UseSelectable = true;
-            this.AddCustomId.Click += new System.EventHandler(this.AddCustomIdClicked);
+            this.metroLabel17.AutoSize = true;
+            this.metroLabel17.FontSize = MetroFramework.MetroLabelSize.Small;
+            this.metroLabel17.Location = new System.Drawing.Point(509, 354);
+            this.metroLabel17.Name = "metroLabel17";
+            this.metroLabel17.Size = new System.Drawing.Size(61, 15);
+            this.metroLabel17.Style = MetroFramework.MetroColorStyle.Black;
+            this.metroLabel17.TabIndex = 41;
+            this.metroLabel17.Text = "Save Token";
+            this.metroLabel17.Theme = MetroFramework.MetroThemeStyle.Dark;
+            // 
+            // SaveToken
+            // 
+            this.SaveToken.DisplayStatus = false;
+            this.SaveToken.Location = new System.Drawing.Point(595, 354);
+            this.SaveToken.Name = "SaveToken";
+            this.SaveToken.Size = new System.Drawing.Size(25, 15);
+            this.SaveToken.Style = MetroFramework.MetroColorStyle.Black;
+            this.SaveToken.TabIndex = 40;
+            this.SaveToken.Text = "Off";
+            this.SaveToken.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.SaveToken.UseSelectable = true;
+            // 
+            // metroLabel3
+            // 
+            this.metroLabel3.AutoSize = true;
+            this.metroLabel3.FontSize = MetroFramework.MetroLabelSize.Small;
+            this.metroLabel3.Location = new System.Drawing.Point(509, 375);
+            this.metroLabel3.Name = "metroLabel3";
+            this.metroLabel3.Size = new System.Drawing.Size(74, 15);
+            this.metroLabel3.Style = MetroFramework.MetroColorStyle.Black;
+            this.metroLabel3.TabIndex = 43;
+            this.metroLabel3.Text = "Clear Cookies";
+            this.metroLabel3.Theme = MetroFramework.MetroThemeStyle.Dark;
+            // 
+            // ClearCookies
+            // 
+            this.ClearCookies.DisplayStatus = false;
+            this.ClearCookies.Location = new System.Drawing.Point(595, 375);
+            this.ClearCookies.Name = "ClearCookies";
+            this.ClearCookies.Size = new System.Drawing.Size(25, 15);
+            this.ClearCookies.Style = MetroFramework.MetroColorStyle.Black;
+            this.ClearCookies.TabIndex = 42;
+            this.ClearCookies.Text = "Off";
+            this.ClearCookies.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.ClearCookies.UseSelectable = true;
             // 
             // Stalker
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(643, 374);
-            this.Controls.Add(this.AddCustomId);
+            this.ClientSize = new System.Drawing.Size(643, 413);
+            this.Controls.Add(this.metroLabel3);
+            this.Controls.Add(this.ClearCookies);
+            this.Controls.Add(this.metroLabel17);
+            this.Controls.Add(this.SaveToken);
             this.Controls.Add(this.metroLabel16);
             this.Controls.Add(this.CheckOnlineDevice);
             this.Controls.Add(this.metroLabel15);
@@ -631,7 +664,6 @@
             this.Controls.Add(this.metroLabel4);
             this.Controls.Add(this.OpenSettings);
             this.Controls.Add(this.StartStopLabel);
-            this.Controls.Add(this.metroLabel3);
             this.Controls.Add(this.metroLabel2);
             this.Controls.Add(this.PreventSleep);
             this.Controls.Add(this.metroLabel1);
@@ -665,7 +697,6 @@
         private System.Windows.Forms.NotifyIcon StalkerTrayIcon;
         private MetroFramework.Controls.MetroToggle PreventSleep;
         private MetroFramework.Controls.MetroLabel metroLabel2;
-        private MetroFramework.Controls.MetroLabel metroLabel3;
         private MetroFramework.Controls.MetroLabel StartStopLabel;
         private MetroFramework.Controls.MetroToggle OpenSettings;
         private MetroFramework.Controls.MetroLabel metroLabel4;
@@ -693,6 +724,9 @@
         private MetroFramework.Controls.MetroToggle CheckStatus;
         private MetroFramework.Controls.MetroLabel metroLabel16;
         private MetroFramework.Controls.MetroToggle CheckOnlineDevice;
-        private MetroFramework.Controls.MetroButton AddCustomId;
+        private MetroFramework.Controls.MetroLabel metroLabel17;
+        private MetroFramework.Controls.MetroToggle SaveToken;
+        private MetroFramework.Controls.MetroLabel metroLabel3;
+        private MetroFramework.Controls.MetroToggle ClearCookies;
     }
 }
