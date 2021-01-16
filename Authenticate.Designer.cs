@@ -38,7 +38,7 @@
             this.ChrBrowser.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ChrBrowser.Location = new System.Drawing.Point(20, 60);
             this.ChrBrowser.Name = "ChrBrowser";
-            this.ChrBrowser.Size = new System.Drawing.Size(617, 287);
+            this.ChrBrowser.Size = new System.Drawing.Size(617, 265);
             this.ChrBrowser.TabIndex = 0;
             this.ChrBrowser.AddressChanged += new System.EventHandler<CefSharp.AddressChangedEventArgs>(this.ChrBrowser_AddressChanged);
             // 
@@ -46,7 +46,7 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(657, 367);
+            this.ClientSize = new System.Drawing.Size(657, 345);
             this.Controls.Add(this.ChrBrowser);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "MetroAuthForm";

@@ -28,7 +28,6 @@ namespace Stalker
                             + $"&redirect_uri={RedirectUri}&revoke=1&display=mobile&response_type=token&v={APIversion}");
             }
             catch (Exception) { }
-            //ChrBrowser.Invoke((MethodInvoker)delegate { ChrBrowser.BrowserSettings.ApplicationCache = CefState.Enabled; }); 
         }
         private void ChrBrowser_AddressChanged(object sender, AddressChangedEventArgs e)
         {
