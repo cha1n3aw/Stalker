@@ -24,7 +24,7 @@ namespace Stalker
                 Application.SetCompatibleTextRenderingDefault(false);
                 Stalker MainFormInstance = new Stalker();
                 Application.Run(MainFormInstance);
-            }
+           }
         }
     }
 }

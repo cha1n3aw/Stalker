@@ -30,8 +30,8 @@
         {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Stalker));
-            this.friends = new MetroFramework.Controls.MetroComboBox();
-            this.customuserid = new MetroFramework.Controls.MetroTextBox();
+            this.ListOfIDs = new MetroFramework.Controls.MetroComboBox();
+            this.CustomIdInput = new MetroFramework.Controls.MetroTextBox();
             this.EventLogs = new MetroFramework.Controls.MetroTextBox();
             this.StartStop = new MetroFramework.Controls.MetroToggle();
             this.Logs = new MetroFramework.Controls.MetroToggle();
@@ -70,59 +70,64 @@
             this.SaveToken = new MetroFramework.Controls.MetroToggle();
             this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
             this.ClearCookies = new MetroFramework.Controls.MetroToggle();
+            this.metroLabel18 = new MetroFramework.Controls.MetroLabel();
+            this.Autostart = new MetroFramework.Controls.MetroToggle();
+            this.metroLabel19 = new MetroFramework.Controls.MetroLabel();
+            this.CheckPosts = new MetroFramework.Controls.MetroToggle();
+            this.LastOnlineLabel = new MetroFramework.Controls.MetroLabel();
             this.SuspendLayout();
             // 
-            // friends
+            // ListOfIDs
             // 
-            this.friends.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.friends.FontSize = MetroFramework.MetroComboBoxSize.Tall;
-            this.friends.FormattingEnabled = true;
-            this.friends.ItemHeight = 29;
-            this.friends.Location = new System.Drawing.Point(23, 63);
-            this.friends.Name = "friends";
-            this.friends.PromptText = "Select User";
-            this.friends.Size = new System.Drawing.Size(267, 35);
-            this.friends.Style = MetroFramework.MetroColorStyle.Black;
-            this.friends.TabIndex = 0;
-            this.friends.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.friends.UseSelectable = true;
-            this.friends.SelectedIndexChanged += new System.EventHandler(this.FriendsIdSelected);
+            this.ListOfIDs.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.ListOfIDs.FontSize = MetroFramework.MetroComboBoxSize.Tall;
+            this.ListOfIDs.FormattingEnabled = true;
+            this.ListOfIDs.ItemHeight = 29;
+            this.ListOfIDs.Location = new System.Drawing.Point(23, 63);
+            this.ListOfIDs.Name = "ListOfIDs";
+            this.ListOfIDs.PromptText = "Select User";
+            this.ListOfIDs.Size = new System.Drawing.Size(267, 35);
+            this.ListOfIDs.Style = MetroFramework.MetroColorStyle.Black;
+            this.ListOfIDs.TabIndex = 0;
+            this.ListOfIDs.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.ListOfIDs.UseSelectable = true;
+            this.ListOfIDs.SelectedIndexChanged += new System.EventHandler(this.FriendsIdSelected);
             // 
-            // customuserid
-            // 
-            // 
+            // CustomIdInput
             // 
             // 
-            this.customuserid.CustomButton.Image = null;
-            this.customuserid.CustomButton.Location = new System.Drawing.Point(70, 2);
-            this.customuserid.CustomButton.Name = "";
-            this.customuserid.CustomButton.Size = new System.Drawing.Size(15, 15);
-            this.customuserid.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
-            this.customuserid.CustomButton.TabIndex = 1;
-            this.customuserid.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
-            this.customuserid.CustomButton.UseSelectable = true;
-            this.customuserid.CustomButton.Visible = false;
-            this.customuserid.Lines = new string[0];
-            this.customuserid.Location = new System.Drawing.Point(296, 78);
-            this.customuserid.MaxLength = 32767;
-            this.customuserid.Name = "customuserid";
-            this.customuserid.PasswordChar = '\0';
-            this.customuserid.PromptText = "Custom ID";
-            this.customuserid.ScrollBars = System.Windows.Forms.ScrollBars.None;
-            this.customuserid.SelectedText = "";
-            this.customuserid.SelectionLength = 0;
-            this.customuserid.SelectionStart = 0;
-            this.customuserid.ShortcutsEnabled = true;
-            this.customuserid.Size = new System.Drawing.Size(88, 20);
-            this.customuserid.Style = MetroFramework.MetroColorStyle.Black;
-            this.customuserid.TabIndex = 1;
-            this.customuserid.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
-            this.customuserid.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.customuserid.UseSelectable = true;
-            this.customuserid.WaterMark = "Custom ID";
-            this.customuserid.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
-            this.customuserid.WaterMarkFont = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.customuserid.KeyDown += new System.Windows.Forms.KeyEventHandler(this.customuserid_KeyDown);
+            // 
+            // 
+            this.CustomIdInput.CustomButton.Image = null;
+            this.CustomIdInput.CustomButton.Location = new System.Drawing.Point(70, 2);
+            this.CustomIdInput.CustomButton.Name = "";
+            this.CustomIdInput.CustomButton.Size = new System.Drawing.Size(15, 15);
+            this.CustomIdInput.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
+            this.CustomIdInput.CustomButton.TabIndex = 1;
+            this.CustomIdInput.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
+            this.CustomIdInput.CustomButton.UseSelectable = true;
+            this.CustomIdInput.CustomButton.Visible = false;
+            this.CustomIdInput.Lines = new string[0];
+            this.CustomIdInput.Location = new System.Drawing.Point(296, 78);
+            this.CustomIdInput.MaxLength = 32767;
+            this.CustomIdInput.Name = "CustomIdInput";
+            this.CustomIdInput.PasswordChar = '\0';
+            this.CustomIdInput.PromptText = "Custom ID";
+            this.CustomIdInput.ScrollBars = System.Windows.Forms.ScrollBars.None;
+            this.CustomIdInput.SelectedText = "";
+            this.CustomIdInput.SelectionLength = 0;
+            this.CustomIdInput.SelectionStart = 0;
+            this.CustomIdInput.ShortcutsEnabled = true;
+            this.CustomIdInput.Size = new System.Drawing.Size(88, 20);
+            this.CustomIdInput.Style = MetroFramework.MetroColorStyle.Black;
+            this.CustomIdInput.TabIndex = 1;
+            this.CustomIdInput.TextAlign = System.Windows.Forms.HorizontalAlignment.Center;
+            this.CustomIdInput.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.CustomIdInput.UseSelectable = true;
+            this.CustomIdInput.WaterMark = "Custom ID";
+            this.CustomIdInput.WaterMarkColor = System.Drawing.Color.FromArgb(((int)(((byte)(109)))), ((int)(((byte)(109)))), ((int)(((byte)(109)))));
+            this.CustomIdInput.WaterMarkFont = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.CustomIdInput.KeyDown += new System.Windows.Forms.KeyEventHandler(this.CustomUserIdEntered);
             // 
             // EventLogs
             // 
@@ -130,9 +135,9 @@
             // 
             // 
             this.EventLogs.CustomButton.Image = null;
-            this.EventLogs.CustomButton.Location = new System.Drawing.Point(179, 2);
+            this.EventLogs.CustomButton.Location = new System.Drawing.Point(109, 2);
             this.EventLogs.CustomButton.Name = "";
-            this.EventLogs.CustomButton.Size = new System.Drawing.Size(281, 281);
+            this.EventLogs.CustomButton.Size = new System.Drawing.Size(351, 351);
             this.EventLogs.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
             this.EventLogs.CustomButton.TabIndex = 1;
             this.EventLogs.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
@@ -144,12 +149,13 @@
             this.EventLogs.Multiline = true;
             this.EventLogs.Name = "EventLogs";
             this.EventLogs.PasswordChar = '\0';
+            this.EventLogs.ReadOnly = true;
             this.EventLogs.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
             this.EventLogs.SelectedText = "";
             this.EventLogs.SelectionLength = 0;
             this.EventLogs.SelectionStart = 0;
             this.EventLogs.ShortcutsEnabled = true;
-            this.EventLogs.Size = new System.Drawing.Size(463, 286);
+            this.EventLogs.Size = new System.Drawing.Size(463, 356);
             this.EventLogs.Style = MetroFramework.MetroColorStyle.Black;
             this.EventLogs.TabIndex = 2;
             this.EventLogs.Theme = MetroFramework.MetroThemeStyle.Dark;
@@ -176,7 +182,7 @@
             this.Logs.Checked = true;
             this.Logs.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Logs.DisplayStatus = false;
-            this.Logs.Location = new System.Drawing.Point(595, 60);
+            this.Logs.Location = new System.Drawing.Point(595, 126);
             this.Logs.Name = "Logs";
             this.Logs.Size = new System.Drawing.Size(25, 15);
             this.Logs.Style = MetroFramework.MetroColorStyle.Black;
@@ -189,7 +195,7 @@
             // 
             this.metroLabel1.AutoSize = true;
             this.metroLabel1.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel1.Location = new System.Drawing.Point(509, 60);
+            this.metroLabel1.Location = new System.Drawing.Point(509, 126);
             this.metroLabel1.Name = "metroLabel1";
             this.metroLabel1.Size = new System.Drawing.Size(31, 15);
             this.metroLabel1.Style = MetroFramework.MetroColorStyle.Black;
@@ -209,7 +215,7 @@
             this.PreventSleep.Checked = true;
             this.PreventSleep.CheckState = System.Windows.Forms.CheckState.Checked;
             this.PreventSleep.DisplayStatus = false;
-            this.PreventSleep.Location = new System.Drawing.Point(595, 81);
+            this.PreventSleep.Location = new System.Drawing.Point(595, 63);
             this.PreventSleep.Name = "PreventSleep";
             this.PreventSleep.Size = new System.Drawing.Size(25, 15);
             this.PreventSleep.Style = MetroFramework.MetroColorStyle.Black;
@@ -223,12 +229,12 @@
             // 
             this.metroLabel2.AutoSize = true;
             this.metroLabel2.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel2.Location = new System.Drawing.Point(509, 81);
+            this.metroLabel2.Location = new System.Drawing.Point(509, 63);
             this.metroLabel2.Name = "metroLabel2";
-            this.metroLabel2.Size = new System.Drawing.Size(50, 15);
+            this.metroLabel2.Size = new System.Drawing.Size(59, 15);
             this.metroLabel2.Style = MetroFramework.MetroColorStyle.Black;
             this.metroLabel2.TabIndex = 10;
-            this.metroLabel2.Text = "NoSleep";
+            this.metroLabel2.Text = "Anti-Sleep";
             this.metroLabel2.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // StartStopLabel
@@ -273,7 +279,7 @@
             this.CheckAlbums.Checked = true;
             this.CheckAlbums.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckAlbums.DisplayStatus = false;
-            this.CheckAlbums.Location = new System.Drawing.Point(595, 123);
+            this.CheckAlbums.Location = new System.Drawing.Point(595, 168);
             this.CheckAlbums.Name = "CheckAlbums";
             this.CheckAlbums.Size = new System.Drawing.Size(25, 15);
             this.CheckAlbums.Style = MetroFramework.MetroColorStyle.Black;
@@ -287,7 +293,7 @@
             this.CheckAudios.Checked = true;
             this.CheckAudios.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckAudios.DisplayStatus = false;
-            this.CheckAudios.Location = new System.Drawing.Point(595, 144);
+            this.CheckAudios.Location = new System.Drawing.Point(595, 189);
             this.CheckAudios.Name = "CheckAudios";
             this.CheckAudios.Size = new System.Drawing.Size(25, 15);
             this.CheckAudios.Style = MetroFramework.MetroColorStyle.Black;
@@ -301,7 +307,7 @@
             this.CheckFollowers.Checked = true;
             this.CheckFollowers.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckFollowers.DisplayStatus = false;
-            this.CheckFollowers.Location = new System.Drawing.Point(595, 165);
+            this.CheckFollowers.Location = new System.Drawing.Point(595, 252);
             this.CheckFollowers.Name = "CheckFollowers";
             this.CheckFollowers.Size = new System.Drawing.Size(25, 15);
             this.CheckFollowers.Style = MetroFramework.MetroColorStyle.Black;
@@ -315,7 +321,7 @@
             this.CheckFriends.Checked = true;
             this.CheckFriends.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckFriends.DisplayStatus = false;
-            this.CheckFriends.Location = new System.Drawing.Point(595, 186);
+            this.CheckFriends.Location = new System.Drawing.Point(595, 273);
             this.CheckFriends.Name = "CheckFriends";
             this.CheckFriends.Size = new System.Drawing.Size(25, 15);
             this.CheckFriends.Style = MetroFramework.MetroColorStyle.Black;
@@ -329,7 +335,7 @@
             this.CheckGifts.Checked = true;
             this.CheckGifts.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckGifts.DisplayStatus = false;
-            this.CheckGifts.Location = new System.Drawing.Point(595, 207);
+            this.CheckGifts.Location = new System.Drawing.Point(595, 294);
             this.CheckGifts.Name = "CheckGifts";
             this.CheckGifts.Size = new System.Drawing.Size(25, 15);
             this.CheckGifts.Style = MetroFramework.MetroColorStyle.Black;
@@ -343,7 +349,7 @@
             this.CheckPages.Checked = true;
             this.CheckPages.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckPages.DisplayStatus = false;
-            this.CheckPages.Location = new System.Drawing.Point(595, 228);
+            this.CheckPages.Location = new System.Drawing.Point(595, 315);
             this.CheckPages.Name = "CheckPages";
             this.CheckPages.Size = new System.Drawing.Size(25, 15);
             this.CheckPages.Style = MetroFramework.MetroColorStyle.Black;
@@ -357,7 +363,7 @@
             this.CheckPhotos.Checked = true;
             this.CheckPhotos.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckPhotos.DisplayStatus = false;
-            this.CheckPhotos.Location = new System.Drawing.Point(595, 249);
+            this.CheckPhotos.Location = new System.Drawing.Point(595, 336);
             this.CheckPhotos.Name = "CheckPhotos";
             this.CheckPhotos.Size = new System.Drawing.Size(25, 15);
             this.CheckPhotos.Style = MetroFramework.MetroColorStyle.Black;
@@ -371,7 +377,7 @@
             this.CheckSubscriptions.Checked = true;
             this.CheckSubscriptions.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckSubscriptions.DisplayStatus = false;
-            this.CheckSubscriptions.Location = new System.Drawing.Point(595, 291);
+            this.CheckSubscriptions.Location = new System.Drawing.Point(595, 378);
             this.CheckSubscriptions.Name = "CheckSubscriptions";
             this.CheckSubscriptions.Size = new System.Drawing.Size(25, 15);
             this.CheckSubscriptions.Style = MetroFramework.MetroColorStyle.Black;
@@ -385,7 +391,7 @@
             this.CheckVideos.Checked = true;
             this.CheckVideos.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckVideos.DisplayStatus = false;
-            this.CheckVideos.Location = new System.Drawing.Point(595, 312);
+            this.CheckVideos.Location = new System.Drawing.Point(595, 399);
             this.CheckVideos.Name = "CheckVideos";
             this.CheckVideos.Size = new System.Drawing.Size(25, 15);
             this.CheckVideos.Style = MetroFramework.MetroColorStyle.Black;
@@ -398,7 +404,7 @@
             // 
             this.metroLabel5.AutoSize = true;
             this.metroLabel5.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel5.Location = new System.Drawing.Point(509, 123);
+            this.metroLabel5.Location = new System.Drawing.Point(509, 168);
             this.metroLabel5.Name = "metroLabel5";
             this.metroLabel5.Size = new System.Drawing.Size(45, 15);
             this.metroLabel5.Style = MetroFramework.MetroColorStyle.Black;
@@ -410,7 +416,7 @@
             // 
             this.metroLabel6.AutoSize = true;
             this.metroLabel6.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel6.Location = new System.Drawing.Point(509, 144);
+            this.metroLabel6.Location = new System.Drawing.Point(509, 189);
             this.metroLabel6.Name = "metroLabel6";
             this.metroLabel6.Size = new System.Drawing.Size(42, 15);
             this.metroLabel6.Style = MetroFramework.MetroColorStyle.Black;
@@ -422,7 +428,7 @@
             // 
             this.metroLabel7.AutoSize = true;
             this.metroLabel7.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel7.Location = new System.Drawing.Point(509, 165);
+            this.metroLabel7.Location = new System.Drawing.Point(509, 252);
             this.metroLabel7.Name = "metroLabel7";
             this.metroLabel7.Size = new System.Drawing.Size(54, 15);
             this.metroLabel7.Style = MetroFramework.MetroColorStyle.Black;
@@ -434,7 +440,7 @@
             // 
             this.metroLabel8.AutoSize = true;
             this.metroLabel8.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel8.Location = new System.Drawing.Point(509, 186);
+            this.metroLabel8.Location = new System.Drawing.Point(509, 273);
             this.metroLabel8.Name = "metroLabel8";
             this.metroLabel8.Size = new System.Drawing.Size(43, 15);
             this.metroLabel8.Style = MetroFramework.MetroColorStyle.Black;
@@ -446,7 +452,7 @@
             // 
             this.metroLabel9.AutoSize = true;
             this.metroLabel9.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel9.Location = new System.Drawing.Point(509, 207);
+            this.metroLabel9.Location = new System.Drawing.Point(509, 294);
             this.metroLabel9.Name = "metroLabel9";
             this.metroLabel9.Size = new System.Drawing.Size(29, 15);
             this.metroLabel9.Style = MetroFramework.MetroColorStyle.Black;
@@ -458,7 +464,7 @@
             // 
             this.metroLabel10.AutoSize = true;
             this.metroLabel10.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel10.Location = new System.Drawing.Point(509, 228);
+            this.metroLabel10.Location = new System.Drawing.Point(509, 315);
             this.metroLabel10.Name = "metroLabel10";
             this.metroLabel10.Size = new System.Drawing.Size(37, 15);
             this.metroLabel10.Style = MetroFramework.MetroColorStyle.Black;
@@ -470,7 +476,7 @@
             // 
             this.metroLabel11.AutoSize = true;
             this.metroLabel11.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel11.Location = new System.Drawing.Point(509, 249);
+            this.metroLabel11.Location = new System.Drawing.Point(509, 336);
             this.metroLabel11.Name = "metroLabel11";
             this.metroLabel11.Size = new System.Drawing.Size(43, 15);
             this.metroLabel11.Style = MetroFramework.MetroColorStyle.Black;
@@ -482,7 +488,7 @@
             // 
             this.metroLabel12.AutoSize = true;
             this.metroLabel12.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel12.Location = new System.Drawing.Point(509, 291);
+            this.metroLabel12.Location = new System.Drawing.Point(509, 378);
             this.metroLabel12.Name = "metroLabel12";
             this.metroLabel12.Size = new System.Drawing.Size(73, 15);
             this.metroLabel12.Style = MetroFramework.MetroColorStyle.Black;
@@ -494,7 +500,7 @@
             // 
             this.metroLabel13.AutoSize = true;
             this.metroLabel13.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel13.Location = new System.Drawing.Point(509, 312);
+            this.metroLabel13.Location = new System.Drawing.Point(509, 399);
             this.metroLabel13.Name = "metroLabel13";
             this.metroLabel13.Size = new System.Drawing.Size(41, 15);
             this.metroLabel13.Style = MetroFramework.MetroColorStyle.Black;
@@ -506,7 +512,7 @@
             // 
             this.metroLabel14.AutoSize = true;
             this.metroLabel14.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel14.Location = new System.Drawing.Point(509, 333);
+            this.metroLabel14.Location = new System.Drawing.Point(509, 210);
             this.metroLabel14.Name = "metroLabel14";
             this.metroLabel14.Size = new System.Drawing.Size(80, 15);
             this.metroLabel14.Style = MetroFramework.MetroColorStyle.Black;
@@ -519,7 +525,7 @@
             this.CheckClips.Checked = true;
             this.CheckClips.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckClips.DisplayStatus = false;
-            this.CheckClips.Location = new System.Drawing.Point(595, 333);
+            this.CheckClips.Location = new System.Drawing.Point(595, 210);
             this.CheckClips.Name = "CheckClips";
             this.CheckClips.Size = new System.Drawing.Size(25, 15);
             this.CheckClips.Style = MetroFramework.MetroColorStyle.Black;
@@ -532,7 +538,7 @@
             // 
             this.metroLabel15.AutoSize = true;
             this.metroLabel15.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel15.Location = new System.Drawing.Point(509, 270);
+            this.metroLabel15.Location = new System.Drawing.Point(509, 357);
             this.metroLabel15.Name = "metroLabel15";
             this.metroLabel15.Size = new System.Drawing.Size(38, 15);
             this.metroLabel15.Style = MetroFramework.MetroColorStyle.Black;
@@ -545,7 +551,7 @@
             this.CheckStatus.Checked = true;
             this.CheckStatus.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckStatus.DisplayStatus = false;
-            this.CheckStatus.Location = new System.Drawing.Point(595, 270);
+            this.CheckStatus.Location = new System.Drawing.Point(595, 357);
             this.CheckStatus.Name = "CheckStatus";
             this.CheckStatus.Size = new System.Drawing.Size(25, 15);
             this.CheckStatus.Style = MetroFramework.MetroColorStyle.Black;
@@ -558,12 +564,12 @@
             // 
             this.metroLabel16.AutoSize = true;
             this.metroLabel16.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel16.Location = new System.Drawing.Point(509, 102);
+            this.metroLabel16.Location = new System.Drawing.Point(509, 231);
             this.metroLabel16.Name = "metroLabel16";
-            this.metroLabel16.Size = new System.Drawing.Size(73, 15);
+            this.metroLabel16.Size = new System.Drawing.Size(39, 15);
             this.metroLabel16.Style = MetroFramework.MetroColorStyle.Black;
             this.metroLabel16.TabIndex = 38;
-            this.metroLabel16.Text = "Online Device";
+            this.metroLabel16.Text = "Device";
             this.metroLabel16.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
             // CheckOnlineDevice
@@ -571,7 +577,7 @@
             this.CheckOnlineDevice.Checked = true;
             this.CheckOnlineDevice.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckOnlineDevice.DisplayStatus = false;
-            this.CheckOnlineDevice.Location = new System.Drawing.Point(595, 102);
+            this.CheckOnlineDevice.Location = new System.Drawing.Point(595, 231);
             this.CheckOnlineDevice.Name = "CheckOnlineDevice";
             this.CheckOnlineDevice.Size = new System.Drawing.Size(25, 15);
             this.CheckOnlineDevice.Style = MetroFramework.MetroColorStyle.Black;
@@ -584,7 +590,7 @@
             // 
             this.metroLabel17.AutoSize = true;
             this.metroLabel17.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel17.Location = new System.Drawing.Point(509, 354);
+            this.metroLabel17.Location = new System.Drawing.Point(509, 147);
             this.metroLabel17.Name = "metroLabel17";
             this.metroLabel17.Size = new System.Drawing.Size(61, 15);
             this.metroLabel17.Style = MetroFramework.MetroColorStyle.Black;
@@ -595,7 +601,7 @@
             // SaveToken
             // 
             this.SaveToken.DisplayStatus = false;
-            this.SaveToken.Location = new System.Drawing.Point(595, 354);
+            this.SaveToken.Location = new System.Drawing.Point(595, 147);
             this.SaveToken.Name = "SaveToken";
             this.SaveToken.Size = new System.Drawing.Size(25, 15);
             this.SaveToken.Style = MetroFramework.MetroColorStyle.Black;
@@ -608,7 +614,7 @@
             // 
             this.metroLabel3.AutoSize = true;
             this.metroLabel3.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel3.Location = new System.Drawing.Point(509, 375);
+            this.metroLabel3.Location = new System.Drawing.Point(509, 105);
             this.metroLabel3.Name = "metroLabel3";
             this.metroLabel3.Size = new System.Drawing.Size(74, 15);
             this.metroLabel3.Style = MetroFramework.MetroColorStyle.Black;
@@ -619,7 +625,7 @@
             // ClearCookies
             // 
             this.ClearCookies.DisplayStatus = false;
-            this.ClearCookies.Location = new System.Drawing.Point(595, 375);
+            this.ClearCookies.Location = new System.Drawing.Point(595, 105);
             this.ClearCookies.Name = "ClearCookies";
             this.ClearCookies.Size = new System.Drawing.Size(25, 15);
             this.ClearCookies.Style = MetroFramework.MetroColorStyle.Black;
@@ -628,11 +634,75 @@
             this.ClearCookies.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.ClearCookies.UseSelectable = true;
             // 
+            // metroLabel18
+            // 
+            this.metroLabel18.AutoSize = true;
+            this.metroLabel18.FontSize = MetroFramework.MetroLabelSize.Small;
+            this.metroLabel18.Location = new System.Drawing.Point(509, 84);
+            this.metroLabel18.Name = "metroLabel18";
+            this.metroLabel18.Size = new System.Drawing.Size(56, 15);
+            this.metroLabel18.Style = MetroFramework.MetroColorStyle.Black;
+            this.metroLabel18.TabIndex = 45;
+            this.metroLabel18.Text = "Autostart";
+            this.metroLabel18.Theme = MetroFramework.MetroThemeStyle.Dark;
+            // 
+            // Autostart
+            // 
+            this.Autostart.DisplayStatus = false;
+            this.Autostart.Location = new System.Drawing.Point(595, 84);
+            this.Autostart.Name = "Autostart";
+            this.Autostart.Size = new System.Drawing.Size(25, 15);
+            this.Autostart.Style = MetroFramework.MetroColorStyle.Black;
+            this.Autostart.TabIndex = 44;
+            this.Autostart.Text = "Off";
+            this.Autostart.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.Autostart.UseSelectable = true;
+            // 
+            // metroLabel19
+            // 
+            this.metroLabel19.AutoSize = true;
+            this.metroLabel19.FontSize = MetroFramework.MetroLabelSize.Small;
+            this.metroLabel19.Location = new System.Drawing.Point(509, 420);
+            this.metroLabel19.Name = "metroLabel19";
+            this.metroLabel19.Size = new System.Drawing.Size(57, 15);
+            this.metroLabel19.Style = MetroFramework.MetroColorStyle.Black;
+            this.metroLabel19.TabIndex = 47;
+            this.metroLabel19.Text = "Wall Posts";
+            this.metroLabel19.Theme = MetroFramework.MetroThemeStyle.Dark;
+            // 
+            // CheckPosts
+            // 
+            this.CheckPosts.DisplayStatus = false;
+            this.CheckPosts.Location = new System.Drawing.Point(595, 420);
+            this.CheckPosts.Name = "CheckPosts";
+            this.CheckPosts.Size = new System.Drawing.Size(25, 15);
+            this.CheckPosts.Style = MetroFramework.MetroColorStyle.Black;
+            this.CheckPosts.TabIndex = 46;
+            this.CheckPosts.Text = "Off";
+            this.CheckPosts.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.CheckPosts.UseSelectable = true;
+            // 
+            // LastOnlineLabel
+            // 
+            this.LastOnlineLabel.AutoSize = true;
+            this.LastOnlineLabel.FontSize = MetroFramework.MetroLabelSize.Tall;
+            this.LastOnlineLabel.Location = new System.Drawing.Point(509, 435);
+            this.LastOnlineLabel.Name = "LastOnlineLabel";
+            this.LastOnlineLabel.Size = new System.Drawing.Size(0, 0);
+            this.LastOnlineLabel.Style = MetroFramework.MetroColorStyle.Black;
+            this.LastOnlineLabel.TabIndex = 48;
+            this.LastOnlineLabel.Theme = MetroFramework.MetroThemeStyle.Dark;
+            // 
             // Stalker
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(643, 413);
+            this.ClientSize = new System.Drawing.Size(643, 483);
+            this.Controls.Add(this.LastOnlineLabel);
+            this.Controls.Add(this.metroLabel19);
+            this.Controls.Add(this.CheckPosts);
+            this.Controls.Add(this.metroLabel18);
+            this.Controls.Add(this.Autostart);
             this.Controls.Add(this.metroLabel3);
             this.Controls.Add(this.ClearCookies);
             this.Controls.Add(this.metroLabel17);
@@ -670,8 +740,8 @@
             this.Controls.Add(this.Logs);
             this.Controls.Add(this.StartStop);
             this.Controls.Add(this.EventLogs);
-            this.Controls.Add(this.customuserid);
-            this.Controls.Add(this.friends);
+            this.Controls.Add(this.CustomIdInput);
+            this.Controls.Add(this.ListOfIDs);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "Stalker";
@@ -688,8 +758,8 @@
 
         #endregion
 
-        private MetroFramework.Controls.MetroComboBox friends;
-        private MetroFramework.Controls.MetroTextBox customuserid;
+        private MetroFramework.Controls.MetroComboBox ListOfIDs;
+        private MetroFramework.Controls.MetroTextBox CustomIdInput;
         private MetroFramework.Controls.MetroTextBox EventLogs;
         private MetroFramework.Controls.MetroToggle StartStop;
         private MetroFramework.Controls.MetroToggle Logs;
@@ -728,5 +798,10 @@
         private MetroFramework.Controls.MetroToggle SaveToken;
         private MetroFramework.Controls.MetroLabel metroLabel3;
         private MetroFramework.Controls.MetroToggle ClearCookies;
+        private MetroFramework.Controls.MetroLabel metroLabel18;
+        private MetroFramework.Controls.MetroToggle Autostart;
+        private MetroFramework.Controls.MetroLabel metroLabel19;
+        private MetroFramework.Controls.MetroToggle CheckPosts;
+        private MetroFramework.Controls.MetroLabel LastOnlineLabel;
     }
 }

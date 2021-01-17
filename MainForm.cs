@@ -9,7 +9,6 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace Stalker
@@ -17,43 +16,43 @@ namespace Stalker
     public partial class Stalker : MetroForm
     {
         private const string ApiRequestLink = "https://api.vk.com/method/";
+        private const string ApiVersion = "5.126";
         private static string AuthToken = String.Empty;
         private static string server_response = String.Empty;
         private List<string> FriendsIdList = new List<string>();
         private List<string> CustomIdList = new List<string>();
         private int user_id = 0;
+        private readonly int WindowHeight = 483;
         string DateTime = string.Empty;
         string TimeShort = string.Empty;
-        Thread polling;
-        
+        Thread Stalking;
+        System.Timers.Timer timer;
+
         private void Get(string uri) { server_response = new WebClient { Encoding = Encoding.UTF8 }.DownloadString(uri); }
         private void FetchFriends()
         {
-            Get($"{ApiRequestLink}friends.get?order=name&count=5000&fields=domain&access_token={AuthToken}&v=5.126");
+            Get($"{ApiRequestLink}friends.get?order=name&count=5000&fields=domain&access_token={AuthToken}&v={ApiVersion}");
             dynamic friendslist = JObject.Parse(server_response);
             var friendsl = friendslist.response;
+            if (Convert.ToInt32(friendsl.count) > 0)
             for (int i = 0; i < Convert.ToInt32(friendsl.count); i++)
             {
                 FriendsIdList.Add((string)friendsl.items[i].id);
-                friends.Items.Add($"{friendsl.items[i].first_name} {friendsl.items[i].last_name}");
+                ListOfIDs.Items.Add($"{friendsl.items[i].first_name} {friendsl.items[i].last_name}");
             }
-            Get($"{ApiRequestLink}users.get?user_ids={ConfigurationManager.AppSettings["CustomIDs"]}&access_token={AuthToken}&v=5.126");
+            Get($"{ApiRequestLink}users.get?user_ids={ConfigurationManager.AppSettings["CustomIDs"]}&access_token={AuthToken}&v={ApiVersion}");
             dynamic customusers = JObject.Parse(server_response);
             foreach (var user in customusers.response)
             {
-                FriendsIdList.Add((string)user.id);
-                friends.Items.Add($"{user.first_name} {user.last_name}");
+                CustomIdList.Add((string)user.id);
+                ListOfIDs.Items.Add($"{user.first_name} {user.last_name}");
             }
         }
         private void LogInVK() 
         {
             MetroAuthForm AuthForm = new MetroAuthForm();
             if (ClearCookies.Checked) AuthForm.ClearCookies = true;
-            if (AuthForm.ShowDialog() == DialogResult.Yes)
-            {
-                AuthToken = AuthForm.Token; 
-                FetchFriends();
-            }
+            if (AuthForm.ShowDialog() == DialogResult.Yes) AuthToken = AuthForm.Token; 
             else if (Application.MessageLoop) Application.Exit();
             else Environment.Exit(1);
             AuthForm.Dispose();
@@ -61,21 +60,33 @@ namespace Stalker
         }
         private void Poll()
         {
+            bool timeout = true;
+            timer = new System.Timers.Timer
+            {
+                Interval = 17300,
+                AutoReset = true
+            };
+            timer.Elapsed += (sender, data) =>
+            {
+                timeout = true;
+                timer.Stop();
+            }; 
+            timer.Enabled = true;
             Counters counters = new Counters();
             bool continuous = false;
             RestrictToggles(false);
             while (StartStop.Checked)
             {
+                string temp_text = string.Empty;
+                bool changed = false;
+                string onlineappid = string.Empty;
+                string newplatform = string.Empty;
                 try
                 {
-                    string onlineappid = string.Empty;
-                    string newplatform = string.Empty;
-                    bool changed = false;
-                    Get($"{ApiRequestLink}users.get?user_ids={user_id}&fields=online,counters,last_seen,activity&access_token={AuthToken}&v=5.126");
+                    Get($"{ApiRequestLink}users.get?user_ids={user_id}&fields=online,counters,last_seen,activity&access_token={AuthToken}&v={ApiVersion}");
                     dynamic decodedresponse = JObject.Parse(server_response);
                     var decoded = decodedresponse.response[0];
-                    //Check for private profile, if so - then restrict unavailaible toggles
-                    if (counters.closed != (bool)decoded.is_closed)
+                    if (counters.closed != (bool)decoded.is_closed) //Check for private profile, if so - then restrict unavailaible toggles
                     {
                         if ((bool)decoded.is_closed)
                         {
@@ -85,14 +96,17 @@ namespace Stalker
                         else RestrictToggles(false);
                         counters.closed = (bool)decoded.is_closed;
                     }
-                    //Get last seen time in string format
-                    DateTime = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded.last_seen.time).ToString("dd MMM yyyy, HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
+                    DateTime = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded.last_seen.time).ToString("dd MMM yyyy, HH:mm:ss", DateTimeFormatInfo.InvariantInfo); //Get last seen time in string format
                     TimeShort = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded.last_seen.time).ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
-
+                    if (TimeShort != counters.LastOnline)
+                        LastOnlineLabel.Invoke((MethodInvoker)delegate
+                        {
+                            LastOnlineLabel.Text = $"{TimeShort}"; 
+                            counters.LastOnline = TimeShort;
+                        });
                     if (CheckOnlineDevice.Checked)
                     {
-                        //Checks for last platform seen, possible values 1-8
-                        if (decoded.last_seen.platform != null)
+                        if (decoded.last_seen.platform != null) //Checks for last platform seen, possible values 1-8
                         {
                             switch ((int)decoded.last_seen.platform)
                             {
@@ -123,18 +137,12 @@ namespace Stalker
                             }
                             if (counters.platform != newplatform)
                             {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                                {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, User switched from { counters.platform }  to { newplatform }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
+                                temp_text += $"{ TimeShort }, User switched from { counters.platform }  to { newplatform }{ Environment.NewLine }";
                                 counters.platform = newplatform;
+                                changed = true;
                             }
                         }
-                        //Checks for an online app
-                        if (decoded.online_app != null)
+                        if (decoded.online_app != null) //Checks for an online app
                         {
                             switch ((int)decoded.online_app)
                             {
@@ -160,163 +168,247 @@ namespace Stalker
                                     { onlineappid = ((int)decoded.online_app).ToString(); }
                                     break;
                             }
-                            if (counters.onlineappid != onlineappid)
+                            if (counters.onlineappid != onlineappid && counters.onlineappid != "Unidentified")
                             {
-                                if (continuous && counters.onlineappid != "Unidentified") EventLogs.Invoke((MethodInvoker)delegate
-                                {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, User switched to another app: from { counters.onlineappid }  to { onlineappid }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
+                                temp_text += $"{ TimeShort }, User switched to another app: from { counters.onlineappid }  to { onlineappid }{ Environment.NewLine }";
                                 counters.onlineappid = onlineappid;
+                                changed = true;
                             }
                         }
                     }
-                    if (counters.online || (bool)decoded.online) //execute checks only if theres offline-online, online-online, online-offline transitions
+                    if (!counters.closed) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
                     {
-                        if (!counters.closed) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
+                        if (CheckAlbums.Checked && decoded.counters.albums != null && counters.albums != (int)decoded.counters.albums)
                         {
-                            if (CheckAlbums.Checked && decoded.counters.albums != null && counters.albums != (int)decoded.counters.albums)
+                            temp_text += $"{ TimeShort }, Update in albums: { counters.albums }  to { (int)decoded.counters.albums }{ Environment.NewLine }";
+                            counters.albums = (int)decoded.counters.albums;
+                            changed = true;
+                        }
+                        if (CheckAudios.Checked && decoded.counters.audios != null && counters.audios != (int)decoded.counters.audios)
+                        {
+                            temp_text += $"{ TimeShort }, Update in audios: { counters.audios }  to { (int)decoded.counters.audios }{ Environment.NewLine }";
+                            counters.audios = (int)decoded.counters.audios;
+                            changed = true;
+                        }
+                        if (CheckGifts.Checked && decoded.counters.gifts != null && counters.gifts != (int)decoded.counters.gifts)
+                        {
+                            temp_text += $"{ TimeShort }, Update in gifts: { counters.gifts }  to { (int)decoded.counters.gifts }{ Environment.NewLine }";
+                            if ((int)decoded.counters.gifts > counters.gifts && continuous)
                             {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
+                                Thread.Sleep(350);
+                                try 
                                 {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, Update in albums: { counters.albums }  to { (int)decoded.counters.albums }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
-                                counters.albums = (int)decoded.counters.albums;
+                                    Get($"{ApiRequestLink}gifts.get?user_id={user_id}&count={(int)decoded.counters.gifts - counters.gifts}&access_token={AuthToken}&v={ApiVersion}"); //get gifts
+                                    dynamic gifts = JObject.Parse(server_response);
+                                    var giftresponse = gifts.response;
+                                    foreach (var item in giftresponse.items) temp_text += $"   Gift from id: { (string)item.from_id }{ Environment.NewLine }   With message: {(string)item.message}{ Environment.NewLine }   Thumbnail: {(string)item.gift.thumb_256}{ Environment.NewLine }";
+                                } catch (Exception) { WriteToFile($"Exception thrown at gifts check{Environment.NewLine}"); }
                             }
-                            if (CheckAudios.Checked && decoded.counters.audios != null && counters.audios != (int)decoded.counters.audios)
+                            counters.gifts = (int)decoded.counters.gifts;
+                            changed = true;
+                        }
+                        if (CheckPhotos.Checked && decoded.counters.photos != null && counters.photos != (int)decoded.counters.photos)
+                        {
+                            temp_text += $"{ TimeShort }, Update in photos: { counters.photos }  to { (int)decoded.counters.photos }{ Environment.NewLine }";
+                            counters.photos = (int)decoded.counters.photos;
+                            changed = true;
+                        }
+                        if (CheckSubscriptions.Checked && decoded.counters.subscriptions != null && counters.subscriptions != (int)decoded.counters.subscriptions)
+                        {
+                            temp_text += $"{ TimeShort }, Update in subscpritions: { counters.subscriptions }  to { (int)decoded.counters.subscriptions }{ Environment.NewLine }";
+                            counters.subscriptions = (int)decoded.counters.subscriptions;
+                            changed = true;
+                        }
+                        if (CheckVideos.Checked && decoded.counters.videos != null && (int)decoded.counters.videos > 0 && counters.videos != (int)decoded.counters.videos)
+                        {
+                            temp_text += $"{ TimeShort }, Update in videos: { counters.videos }  to { (int)decoded.counters.videos }{ Environment.NewLine }";
+                            if ((int)decoded.counters.videos > counters.videos && continuous)
                             {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
+                                Thread.Sleep(350); //timeout on api requests
+                                try 
                                 {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, Update in audios: { counters.audios }  to { (int)decoded.counters.audios }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
-                                counters.audios = (int)decoded.counters.audios;
+                                    Get($"{ApiRequestLink}video.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                    dynamic videos = JObject.Parse(server_response);
+                                    var videosresponse = videos.response;
+                                    for (int i = 0; i < (int)videosresponse.count - counters.videos; i++)
+                                        temp_text += $"   Video title: {(string)videosresponse.items[i].title}{ Environment.NewLine }"
+                                            + $"   Video link: {(string)videosresponse.items[i].player}{ Environment.NewLine }"
+                                            + $"   Video ID & Owner ID: {(string)videosresponse.items[i].id} & {(string)videosresponse.items[i].owner_id}{ Environment.NewLine }";
+                                } catch (Exception) { WriteToFile($"Exception thrown at video check{Environment.NewLine}"); }
                             }
-                            if (CheckGifts.Checked && decoded.counters.gifts != null && counters.gifts != (int)decoded.counters.gifts)
-                            {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                                {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, Update in gifts: { counters.gifts }  to { (int)decoded.counters.gifts }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
-                                counters.gifts = (int)decoded.counters.gifts;
-                            }
-                            if (CheckPhotos.Checked && decoded.counters.photos != null && counters.photos != (int)decoded.counters.photos)
-                            {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                                {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, Update in photos: { counters.photos }  to { (int)decoded.counters.photos }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
-                                counters.photos = (int)decoded.counters.photos;
-                            }
-                            if (CheckSubscriptions.Checked && decoded.counters.subscriptions != null && counters.subscriptions != (int)decoded.counters.subscriptions)
-                            {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                                {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, Update in subscpritions: { counters.subscriptions }  to { (int)decoded.counters.subscriptions }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
-                                counters.subscriptions = (int)decoded.counters.subscriptions;
-                            }
-                            if (CheckVideos.Checked && decoded.counters.videos != null && counters.videos != (int)decoded.counters.videos)
-                            {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                                {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, Update in videos: { counters.videos }  to { (int)decoded.counters.videos }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
-                                counters.videos = (int)decoded.counters.videos;
-                            }
-                            if (CheckClips.Checked && decoded.counters.clips_followers != null && counters.clips_followers != (int)decoded.counters.clips_followers)
-                            {
-                                if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                                {
-                                    if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                                    WriteToFile($"{ TimeShort }, Update in clips followers: { counters.clips_followers }  to { (int)decoded.counters.clips_followers }{ Environment.NewLine }");
-                                    if (counters.online || (bool)decoded.online)
-                                        changed = true;
-                                });
-                                counters.clips_followers = (int)decoded.counters.clips_followers;
-                            }
+                            counters.videos = (int)decoded.counters.videos;
+                            changed = true;
+                        }
+                        if (CheckClips.Checked && decoded.counters.clips_followers != null && counters.clips_followers != (int)decoded.counters.clips_followers)
+                        {
+                            temp_text += $"{ TimeShort }, Update in clips followers: { counters.clips_followers }  to { (int)decoded.counters.clips_followers }{ Environment.NewLine }";
+                            counters.clips_followers = (int)decoded.counters.clips_followers;
+                            changed = true;
                         }
                     }
                     if (CheckPages.Checked && decoded.counters.pages != null && counters.pages != (int)decoded.counters.pages) //checks independently from private profile, but only in offline-online online-online online-offline modes
                     {
-                        if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                        {
-                            if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                            WriteToFile($"{ TimeShort }, Update in pages: { counters.pages }  to { (int)decoded.counters.pages }{ Environment.NewLine }");
-                            if (counters.online || (bool)decoded.online)
-                                changed = true;
-                        });
+                        temp_text += $"{ TimeShort }, Update in pages: { counters.pages }  to { (int)decoded.counters.pages }{ Environment.NewLine }";
                         counters.pages = (int)decoded.counters.pages;
+                        changed = true;
                     }
                     if (CheckStatus.Checked && decoded.activity != null && counters.activity != (string)decoded.activity) //checks independently from private profile, but only in offline-online online-online online-offline modes
                     {
-                        if (continuous) EventLogs.Invoke((MethodInvoker)delegate
-                        {
-                            if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                            WriteToFile($"{ TimeShort }, Update in status: old '{ counters.activity }', new '{ (string)decoded.activity }'{ Environment.NewLine }");
-                            if (counters.online || (bool)decoded.online)
-                                changed = true;
-                        });
+                        temp_text += $"{ TimeShort }, Update in status: old '{ counters.activity }', new '{ (string)decoded.activity }'{ Environment.NewLine }";
                         counters.activity = (string)decoded.activity;
+                        changed = true;
                     }
                     if (CheckFriends.Checked && decoded.counters.friends != null && counters.friends != (int)decoded.counters.friends) //checks in all modes including offline-offline, independetly from private profile
                     {
-                        if (continuous) EventLogs.Invoke((MethodInvoker)delegate
+                        temp_text += $"{ TimeShort }, Update in friends: { counters.friends }  to { (int)decoded.counters.friends }{ Environment.NewLine }";
+                        if (!counters.closed && continuous)
                         {
-                            if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                            WriteToFile($"{ TimeShort }, Update in friends: { counters.friends }  to { (int)decoded.counters.friends }{ Environment.NewLine }");
-                            if (counters.online || (bool)decoded.online) changed = true;
-                        });
+                            Thread.Sleep(350); //timeout on api requests
+                            try
+                            {
+                                Get($"{ApiRequestLink}friends.get?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                dynamic userfriends = JObject.Parse(server_response);
+                                var friendsresponse = userfriends.response;
+                                if (friendsresponse.count > counters.friends)
+                                    foreach (var addedfriend in friendsresponse.items)
+                                        if (!counters.friends_list.Contains(addedfriend.ToString()))
+                                        {
+                                            temp_text = temp_text.Trim('\n');
+                                            temp_text += $", new friend id: {addedfriend.ToString()}{ Environment.NewLine }";
+                                            counters.friends_list.Add(addedfriend.ToString());
+                                        }
+                                        else { }
+                                else
+                                {
+                                    List<string> TempListNew = friendsresponse.items.ToObject<List<string>>();
+                                    foreach (string removedfriend in counters.friends_list)
+                                        if (!TempListNew.Contains(removedfriend))
+                                        {
+                                            temp_text = temp_text.Trim('\n');
+                                            temp_text += $", removed friend id: {removedfriend}{ Environment.NewLine }";
+                                        }
+                                    counters.friends_list = TempListNew;
+                                }   
+                            }
+                            catch (Exception) { WriteToFile($"Exception thrown at friends check{Environment.NewLine}"); }
+                        }
                         counters.friends = (int)decoded.counters.friends;
+                        changed = true;
                     }
                     if (CheckFollowers.Checked && !counters.closed && decoded.counters.followers != null && counters.followers != (int)decoded.counters.followers) //checks in all modes including offline-offline, but depends on private profile
                     {
-                        if (continuous) EventLogs.Invoke((MethodInvoker)delegate
+                        temp_text += $"{ TimeShort }, Update in followers: { counters.followers }  to { (int)decoded.counters.followers }{ Environment.NewLine }";
+                        if (!counters.closed && continuous)
                         {
-                            if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') WriteToFile($"  { DateTime }{ Environment.NewLine }");
-                            WriteToFile($"{ TimeShort }, Update in followers: { counters.followers }  to { (int)decoded.counters.followers }{ Environment.NewLine }");
-                            if (counters.online || (bool)decoded.online) changed = true;
-                        });
+                            Thread.Sleep(350); //timeout on api requests
+                            try
+                            {
+                                Get($"{ApiRequestLink}users.getFollowers?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                dynamic userfollowers = JObject.Parse(server_response);
+                                var followersresponse = userfollowers.response;
+                                if (followersresponse.count > counters.followers)
+                                    foreach (var addedfollower in followersresponse.items)
+                                        if (!counters.followers_list.Contains(addedfollower.ToString()))
+                                        {
+                                            temp_text = temp_text.Trim('\n');
+                                            temp_text += $", new follower id: {addedfollower.ToString()}{ Environment.NewLine }";
+                                            counters.followers_list.Add(addedfollower.ToString());
+                                        }
+                                        else { }
+                                else
+                                {
+                                    List<string> TempListNew = followersresponse.items.ToObject<List<string>>();
+                                    foreach (string removedfollower in counters.followers_list)
+                                        if (!TempListNew.Contains(removedfollower))
+                                        {
+                                            temp_text = temp_text.Trim('\n');
+                                            temp_text += $", removed follower id: {removedfollower}{ Environment.NewLine }";
+                                        }
+                                    counters.followers_list = TempListNew;
+                                }
+                            }
+                            catch (Exception) { WriteToFile($"Exception thrown at followers check{Environment.NewLine}"); }
+                        }
                         counters.followers = (int)decoded.counters.followers;
+                        changed = true;
                     }
-                    //Main ONLINE-OFFLINE checking part
-                    if (changed || (counters.online != (bool)decoded.online)) //if changes were committed (but there are no 'online status' changes), or if 'online status' changed
+                    if (CheckPosts.Checked && !counters.closed && timeout) //depends on private profile
                     {
-                        if (changed || (!counters.online && (bool)decoded.online)) //if changes were committed or offline to online transition happened
-                            if (CheckOnlineDevice.Checked) 
+                        try
+                        {
+                            Thread.Sleep(350); //timeout on api requests
+                            Get($"{ApiRequestLink}wall.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}"); //get wall posts
+                            dynamic posts = JObject.Parse(server_response);
+                            var response = posts.response;
+                            if (response.count != null && counters.posts != (int)response.count)
+                            {
+                                temp_text += $"{ TimeShort }, Update in posts: { counters.posts }  to { (int)response.count }{ Environment.NewLine }";
+                                if ((int)response.count > counters.posts && continuous)
+                                {
+                                    for (int i = 0; i < (int)response.count - counters.posts; i++)
+                                    {
+                                        if (response.items[i].text != null && (string)response.items[i].text != "")
+                                            temp_text += $"   Post text: {(string)response.items[i].text}{ Environment.NewLine }";
+                                        if (response.items[i].attachments != null)
+                                            foreach (var attachment in response.items[i].attachments)
+                                                switch ((string)attachment.type)
+                                                {
+                                                    case "photo":
+                                                        { temp_text += $"   Attached image: {(string)attachment.photo.sizes[attachment.photo.sizes.Count - 1].url}{ Environment.NewLine }"; }
+                                                        break;
+                                                    case "video":
+                                                        { temp_text += $"   Attached video title: {(string)attachment.video.title}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment.video.id} & {(string)attachment.video.id}{ Environment.NewLine }"; }
+                                                        break;
+                                                    case "audio":
+                                                        { temp_text += $"   Attached audio: {(string)attachment.audio.artist}   —  {(string)attachment.audio.title}{ Environment.NewLine }"; }
+                                                        break;
+                                                    case "link":
+                                                        { temp_text += $"   Attached link: {(string)attachment.link.url}{ Environment.NewLine }"; }
+                                                        break;
+                                                    case "doc":
+                                                        { temp_text += $"   Attached document: {(string)attachment.doc.title}{ Environment.NewLine }    Document link: {(string)attachment.doc.url}{ Environment.NewLine }"; }
+                                                        break;
+                                                }
+                                    }
+                                }
+                                counters.posts = (int)response.count;
+                                changed = true;
+                            }
+                            timeout = false;
+                            timer.Start();
+                        }
+                        catch (Exception) { WriteToFile($"Exception thrown at posts, probably too many requests were made{Environment.NewLine}"); CheckPosts.Checked = false; }
+                    }
+                    if (changed && continuous) EventLogs.Invoke((MethodInvoker)delegate
+                    {
+                        if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') temp_text = $"  { DateTime }{ Environment.NewLine }" + temp_text;
+                        WriteToFile(temp_text);
+                        if (counters.online == (bool)decoded.online && counters.online) counters.online = !counters.online;
+                    });
+                    changed = false;
+                    if (!continuous) continuous = true; //if 'while' is not on its first itteration
+                                                        //Main ONLINE-OFFLINE checking part
+                    if (counters.online != (bool)decoded.online) //if 'online status' changed
+                    {
+                        if (!counters.online && (bool)decoded.online) //if changes were committed or offline to online transition happened
+                            if (CheckOnlineDevice.Checked)
                                 if (onlineappid != string.Empty && newplatform != string.Empty) WriteToFile($"Online {newplatform}, {onlineappid}: { DateTime }   —");
-                                    else WriteToFile($"Online {newplatform}: { DateTime }   —");
+                                else WriteToFile($"Online {newplatform}: { DateTime }   —");
                             else WriteToFile($"Online: { DateTime }   —");
                         else WriteToFile($"  { DateTime }{ Environment.NewLine }"); //if transition online to offline happened
                         counters.online = (bool)decoded.online;
-                        changed = false;
                     }
-                    if (!continuous && (bool)decoded.online) continuous = true; //if online status is set and 'while' is not on its first itteration
-
                 }
-                catch (Exception) { }
-                Thread.Sleep(1000); //timeout on api requests
+                catch (Exception) { WriteToFile($"Global error, possibly get counters failed{Environment.NewLine}"); }
+                Thread.Sleep(350); //timeout on api requests
             }
         }
+
+        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            throw new NotImplementedException();
+        }
+
         private void WriteToFile(string text)
         {
             string[] str = File.ReadAllLines(Application.StartupPath + $"\\{user_id}.txt");
@@ -330,7 +422,7 @@ namespace Stalker
         {
             base.OnFormClosing(e);
             SettingsThread(SettingsList());
-            if (polling != null) Stop();
+            if (Stalking != null) Stop();
             if (e.CloseReason == CloseReason.WindowsShutDown) return;
         }
         private void RestrictToggles(bool state)
@@ -345,6 +437,7 @@ namespace Stalker
                     CheckFollowers.Checked = CheckFollowers.Enabled =
                     CheckGifts.Checked = CheckGifts.Enabled =
                     CheckPhotos.Checked = CheckPhotos.Enabled =
+                    CheckPosts.Checked = CheckPosts.Enabled =
                     CheckSubscriptions.Checked = CheckSubscriptions.Enabled =
                     CheckVideos.Checked = CheckVideos.Enabled = false;
                 }));
@@ -353,15 +446,18 @@ namespace Stalker
             {
                 BeginInvoke(new MethodInvoker(delegate
                 {
-                    CheckAlbums.Enabled = CheckAudios.Enabled = CheckClips.Enabled = CheckFollowers.Enabled =
-                    CheckGifts.Enabled = CheckPhotos.Enabled = CheckSubscriptions.Enabled = CheckVideos.Enabled = true;
+                    CheckAlbums.Enabled = CheckAudios.Enabled = 
+                    CheckClips.Enabled = CheckFollowers.Enabled = 
+                    CheckGifts.Enabled = CheckPhotos.Enabled = 
+                    CheckPosts.Enabled = CheckSubscriptions.Enabled = 
+                    CheckVideos.Enabled = true;
                 }));
             }
         }
         private void FriendsIdSelected(object sender, EventArgs e) 
         {
-            if (FriendsIdList.Count > 0 && friends.SelectedIndex < FriendsIdList.Count) user_id = Convert.ToInt32(FriendsIdList[friends.SelectedIndex]);
-            else if (CustomIdList.Count > 0 && friends.SelectedIndex >= FriendsIdList.Count) user_id = Convert.ToInt32(CustomIdList[friends.SelectedIndex - FriendsIdList.Count]);
+            if (FriendsIdList.Count > 0 && ListOfIDs.SelectedIndex < FriendsIdList.Count) user_id = Convert.ToInt32(FriendsIdList[ListOfIDs.SelectedIndex]);
+            else if (CustomIdList.Count > 0 && ListOfIDs.SelectedIndex >= FriendsIdList.Count) user_id = Convert.ToInt32(CustomIdList[ListOfIDs.SelectedIndex - FriendsIdList.Count]);
             if (Logs.Checked)
                 if (File.Exists(Application.StartupPath + $"\\{user_id}.txt")) EventLogs.Invoke((MethodInvoker)delegate { EventLogs.Text = File.ReadAllText(Application.StartupPath + $"\\{user_id}.txt"); });
                 else
@@ -370,24 +466,36 @@ namespace Stalker
                     EventLogs.Text = File.ReadAllText(Application.StartupPath + $"\\{user_id}.txt");
                 }
         }
+        private void CustomUserIdEntered(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter && int.TryParse(CustomIdInput.Text, out int id))
+            {
+                try
+                {
+                    Get($"{ApiRequestLink}users.get?user_ids={id}&access_token={AuthToken}&v={ApiVersion}");
+                    dynamic decodedresponse = JObject.Parse(server_response);
+                    var decoded = decodedresponse.response[0];
+                    if (!CustomIdList.Contains(id.ToString()) && !FriendsIdList.Contains(id.ToString()))
+                    {
+                        CustomIdList.Add(id.ToString());
+                        ListOfIDs.Items.Add($"{decoded.first_name} {decoded.last_name}");
+                        CustomIdInput.Text = "";
+                    }
+                }
+                catch (Exception) { }
+            }
+        }
         private void StartStop_CheckedChanged(object sender, EventArgs e)
         {
-            if (StartStop.Checked) 
-            { 
-                StartStopLabel.Text = "Stop"; 
-                Start(); 
-            } 
-            else 
-            { 
-                Stop(); 
-                StartStopLabel.Text = "Start"; 
-            } 
+            if (StartStop.Checked) Start();  
+            else Stop(); 
         }
         private void Start()
         {
-            polling = new Thread(Poll) { IsBackground = true, Priority = ThreadPriority.Highest };
-            polling.Start();
-            friends.Enabled = customuserid.Enabled = Logs.Enabled = false;
+            StartStopLabel.Text = "Stop";
+            Stalking = new Thread(Poll) { IsBackground = true, Priority = ThreadPriority.Highest };
+            Stalking.Start();
+            ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = false;
             if (Logs.Checked)
             if (!(EventLogs.Text[EventLogs.Text.Length - 3] == '—') && EventLogs.Text[EventLogs.Text.Length - 1] == '\n') 
                 WriteToFile($"————————————————————————————————————{ Environment.NewLine }");
@@ -396,11 +504,11 @@ namespace Stalker
         }
         private void Stop()
         {
+            StartStopLabel.Text = "Start";
             if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') 
                 WriteToFile($"  { DateTime }{ Environment.NewLine }");
-            polling.Abort();
-            while (!(polling.ThreadState == ThreadState.Aborted)) ;
-            friends.Enabled = customuserid.Enabled = Logs.Enabled = true;
+            ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = true;
+            RestrictToggles(false);
         }
         private void StalkerTrayIcon_DoubleClick(object sender, EventArgs e)
         {
@@ -414,8 +522,8 @@ namespace Stalker
         }
         private void OpenSettings_CheckedChanged(object sender, EventArgs e)
         {
-            if(OpenSettings.Checked) Size = new System.Drawing.Size(643, 413);
-            else Size = new System.Drawing.Size(509, 413);
+            if(OpenSettings.Checked) Size = new System.Drawing.Size(643, WindowHeight);
+            else Size = new System.Drawing.Size(509, WindowHeight);
         }
         private void OnPowerChange(object s, PowerModeChangedEventArgs e)
         {
@@ -460,18 +568,21 @@ namespace Stalker
                 new KeyValuePair<string, string>("Gifts", CheckGifts.Checked.ToString()),
                 new KeyValuePair<string, string>("Pages", CheckPages.Checked.ToString()),
                 new KeyValuePair<string, string>("Photos", CheckPhotos.Checked.ToString()),
+                new KeyValuePair<string, string>("Posts", CheckPosts.Checked.ToString()),
                 new KeyValuePair<string, string>("Status", CheckStatus.Checked.ToString()),
                 new KeyValuePair<string, string>("Subscriptions", CheckSubscriptions.Checked.ToString()),
                 new KeyValuePair<string, string>("Videos", CheckVideos.Checked.ToString()),
                 new KeyValuePair<string, string>("ClipsFollowers", CheckClips.Checked.ToString()),
                 new KeyValuePair<string, string>("OpenSettings", OpenSettings.Checked.ToString()),
                 new KeyValuePair<string, string>("ClearCookies", ClearCookies.Checked.ToString()),
+                new KeyValuePair<string, string>("SelectedUser", ListOfIDs.SelectedIndex.ToString()),
+                new KeyValuePair<string, string>("Autostart", Autostart.Checked.ToString()),
             };
             return settingslist;
         }
         private void LoadSettings()
         {
-            Size = new System.Drawing.Size(509, 413);
+            Size = new System.Drawing.Size(509, WindowHeight);
             SystemEvents.PowerModeChanged += OnPowerChange;
             Logs.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Logs"]);
             PreventSleep.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["NoSleep"]);
@@ -483,41 +594,27 @@ namespace Stalker
             CheckGifts.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Gifts"]);
             CheckPages.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Pages"]);
             CheckPhotos.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Photos"]);
+            CheckPosts.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Posts"]);
             CheckStatus.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Status"]);
             CheckSubscriptions.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Subscriptions"]);
             CheckVideos.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Videos"]);
             CheckClips.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClipsFollowers"]);
             OpenSettings.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["OpenSettings"]);
-            AuthToken = ConfigurationManager.AppSettings["AuthToken"];
             SaveToken.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["SaveToken"]);
+            if (SaveToken.Checked) AuthToken = ConfigurationManager.AppSettings["AuthToken"];
+            else AuthToken = "";
             ClearCookies.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClearCookies"]);
-            if (SaveToken.Checked && AuthToken != "") FetchFriends();
-            else LogInVK();
+            Autostart.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Autostart"]);
+            if (!SaveToken.Checked || AuthToken == "") LogInVK();
+            FetchFriends();
+            int index = Convert.ToInt32(ConfigurationManager.AppSettings["SelectedUser"]);
+            if (ListOfIDs.Items.Count > index) ListOfIDs.SelectedIndex = index;
+            if (Autostart.Checked) StartStop.Checked = true;
         }
         public Stalker()
         {
             InitializeComponent();
             LoadSettings();
-        }
-
-        private void customuserid_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.KeyCode == Keys.Enter && int.TryParse(customuserid.Text, out int id))
-            {
-                try
-                {
-                    Get($"{ApiRequestLink}users.get?user_ids={id}&access_token={AuthToken}&v=5.126");
-                    dynamic decodedresponse = JObject.Parse(server_response);
-                    var decoded = decodedresponse.response[0];
-                    if (!CustomIdList.Contains(id.ToString()) && !FriendsIdList.Contains(id.ToString()))
-                    {
-                        CustomIdList.Add(id.ToString());
-                        friends.Items.Add($"{decoded.first_name} {decoded.last_name}");
-                        customuserid.Text = "";
-                    }
-                }
-                catch (Exception) { }
-            }
         }
     }
     public class Counters
@@ -531,12 +628,16 @@ namespace Stalker
         public int gifts = 0;
         public int pages = 0;
         public int photos = 0;
+        public int posts = 0;
         public int subscriptions = 0;
         public int videos = 0;
         public int clips_followers = 0;
         public string activity = string.Empty;
         public string platform = "Unidentified";
         public string onlineappid = "Unidentified";
+        public List<string> friends_list = new List<string>();
+        public List<string> followers_list = new List<string>();
+        public string LastOnline = string.Empty;
     }
 }
 
