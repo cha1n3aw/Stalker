@@ -12,7 +12,7 @@ namespace Stalker
     {
         private string RedirectUri = "https://oauth.vk.com/blank.html";
         private string AuthUri = "https://oauth.vk.com/authorize?";
-        private int APPid = 7482854; //7482854 fox 2685278 kate mobile
+        internal int APPid = 2685278; //7482854 fox 2685278 kate mobile
         private string APIversion = "5.126";
         internal bool ClearCookies = false;
         public string Token { get; private set; }

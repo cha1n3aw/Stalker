@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading;
@@ -22,9 +23,8 @@ namespace Stalker
         private List<string> FriendsIdList = new List<string>();
         private List<string> CustomIdList = new List<string>();
         private int user_id = 0;
-        private readonly int WindowHeight = 483;
-        string DateTime = string.Empty;
-        string TimeShort = string.Empty;
+        private readonly int WindowHeight = 504;
+        string OnlineDateTime = string.Empty;
         Thread Stalking;
         System.Timers.Timer timer;
 
@@ -52,6 +52,7 @@ namespace Stalker
         {
             MetroAuthForm AuthForm = new MetroAuthForm();
             if (ClearCookies.Checked) AuthForm.ClearCookies = true;
+            if (CustomAppIdToggle.Checked && int.TryParse(CustomAppId.Text, out int appid)) AuthForm.APPid = appid;
             if (AuthForm.ShowDialog() == DialogResult.Yes) AuthToken = AuthForm.Token; 
             else if (Application.MessageLoop) Application.Exit();
             else Environment.Exit(1);
@@ -84,339 +85,441 @@ namespace Stalker
                 try
                 {
                     Get($"{ApiRequestLink}users.get?user_ids={user_id}&fields=online,counters,last_seen,activity&access_token={AuthToken}&v={ApiVersion}");
-                    dynamic decodedresponse = JObject.Parse(server_response);
-                    var decoded = decodedresponse.response[0];
-                    if (counters.closed != (bool)decoded.is_closed) //Check for private profile, if so - then restrict unavailaible toggles
+                    JObject decodedresponse = JObject.Parse(server_response);
+                    var decoded = decodedresponse["response"][0];
+                    if (counters.decoded == null)
                     {
-                        if ((bool)decoded.is_closed)
+                        counters.decoded = (JObject)decoded;
+                        counters.decoded["online"] = false;
+                        counters.decoded["counters"]["photos"] = 0;
+                        counters.decoded["counters"]["gifts"] = 0;
+                        counters.decoded["counters"]["videos"] = 0;
+                        counters.decoded["counters"]["followers"] = 0;
+                        counters.decoded["counters"]["friends"] = 0;
+                        counters.decoded["is_closed"] = false;
+                    }
+
+                    if ((bool)counters.decoded["is_closed"] != (bool)decoded["is_closed"]) //Check for private profile, if so - then restrict unavailaible toggles
+                    {
+                        if ((bool)decoded["is_closed"])
                         {
                             RestrictToggles(true);
                             WriteToFile($"User has private profile, settings were partially restricted{ Environment.NewLine }");
                         }
                         else RestrictToggles(false);
-                        counters.closed = (bool)decoded.is_closed;
                     }
-                    DateTime = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded.last_seen.time).ToString("dd MMM yyyy, HH:mm:ss", DateTimeFormatInfo.InvariantInfo); //Get last seen time in string format
-                    TimeShort = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded.last_seen.time).ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
-                    if (TimeShort != counters.LastOnline)
+
+                    string CurrentTime = DateTime.Now.ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
+                    OnlineDateTime = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded["last_seen"]["time"]).ToString("dd MMM yyyy, HH:mm:ss", DateTimeFormatInfo.InvariantInfo); //Get last seen time in string format
+                    string OnlineTime  = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded["last_seen"]["time"]).ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
+                    if (OnlineTime != counters.LastOnline)
                         LastOnlineLabel.Invoke((MethodInvoker)delegate
                         {
-                            LastOnlineLabel.Text = $"{TimeShort}"; 
-                            counters.LastOnline = TimeShort;
+                            LastOnlineLabel.Text = $"{OnlineTime}"; 
+                            counters.LastOnline = OnlineTime;
                         });
                     if (CheckOnlineDevice.Checked)
                     {
-                        if (decoded.last_seen.platform != null) //Checks for last platform seen, possible values 1-8
+                        if (decoded["last_seen"]["platform"] != null) //Checks for last platform seen, possible values 1-8
                         {
-                            switch ((int)decoded.last_seen.platform)
+                            switch ((string)decoded["last_seen"]["platform"])
                             {
-                                case 1:
-                                    { newplatform = "Mobile WEB"; }
+                                case "1":
+                                    { decoded["last_seen"]["platform"] = "Mobile WEB"; }
                                     break;
-                                case 2:
-                                    { newplatform = "iPhone"; }
+                                case "2":
+                                    { decoded["last_seen"]["platform"] = "iPhone"; }
                                     break;
-                                case 3:
-                                    { newplatform = "iPad"; }
+                                case "3":
+                                    { decoded["last_seen"]["platform"] = "iPad"; }
                                     break;
-                                case 4:
-                                    { newplatform = "Android"; }
+                                case "4":
+                                    { decoded["last_seen"]["platform"] = "Android"; }
                                     break;
-                                case 5:
-                                    { newplatform = "WinPhone"; }
+                                case "5":
+                                    { decoded["last_seen"]["platform"] = "WinPhone"; }
                                     break;
-                                case 6:
-                                    { newplatform = "Windows 8"; }
+                                case "6":
+                                    { decoded["last_seen"]["platform"] = "Windows 8"; }
                                     break;
-                                case 7:
-                                    { newplatform = "WEB"; }
+                                case "7":
+                                    { decoded["last_seen"]["platform"] = "WEB"; }
                                     break;
-                                case 8:
-                                    { newplatform = "VK Mobile"; }
-                                    break;
-                            }
-                            if (counters.platform != newplatform)
-                            {
-                                temp_text += $"{ TimeShort }, User switched from { counters.platform }  to { newplatform }{ Environment.NewLine }";
-                                counters.platform = newplatform;
-                                changed = true;
-                            }
-                        }
-                        if (decoded.online_app != null) //Checks for an online app
-                        {
-                            switch ((int)decoded.online_app)
-                            {
-                                case 2274003:
-                                    { onlineappid = "Android VK"; }
-                                    break;
-                                case 3140623:
-                                    { onlineappid = "iPhone VK"; }
-                                    break;
-                                case 3682744:
-                                    { onlineappid = "iPad VK"; }
-                                    break;
-                                case 3697615:
-                                    { onlineappid = "Windows Desktop VK"; }
-                                    break;
-                                case 3502557:
-                                    { onlineappid = "Windows Phone VK"; }
-                                    break;
-                                case 2685278:
-                                    { onlineappid = "Kate Mobile"; }
+                                case "8":
+                                    { decoded["last_seen"]["platform"] = "VK Mobile"; }
                                     break;
                                 default:
-                                    { onlineappid = ((int)decoded.online_app).ToString(); }
+                                    { decoded["last_seen"]["platform"] = "Unknown"; }
                                     break;
                             }
-                            if (counters.onlineappid != onlineappid && counters.onlineappid != "Unidentified")
+                            if (counters.decoded["online_app"] != null && (string)counters.decoded["last_seen"]["platform"] != (string)decoded["last_seen"]["platform"])
                             {
-                                temp_text += $"{ TimeShort }, User switched to another app: from { counters.onlineappid }  to { onlineappid }{ Environment.NewLine }";
-                                counters.onlineappid = onlineappid;
+                                temp_text += $"{ OnlineTime }, User switched from { counters.decoded["platform"] }  to { decoded["last_seen"]["platform"] }{ Environment.NewLine }";
+                                changed = true;
+                            }
+                        }
+                        if (decoded["online_app"] != null)
+                        {
+                            switch ((string)decoded["online_app"])
+                            {
+                                case "2274003":
+                                    { decoded["online_app"] = "Android VK"; }
+                                    break;
+                                case "3140623":
+                                    { decoded["online_app"] = "iPhone VK"; }
+                                    break;
+                                case "3682744":
+                                    { decoded["online_app"] = "iPad VK"; }
+                                    break;
+                                case "3697615":
+                                    { decoded["online_app"] = "Windows Desktop VK"; }
+                                    break;
+                                case "3502557":
+                                    { decoded["online_app"] = "Windows Phone VK"; }
+                                    break;
+                                case "2685278":
+                                    { decoded["online_app"] = "Kate Mobile"; }
+                                    break;
+                                default:
+                                    { decoded["online_app"] = (string)decoded["online_app"]; }
+                                    break;
+                            }
+                            if (counters.decoded["online_app"] != null && (string)counters.decoded["online_app"] != (string)decoded["online_app"])
+                            {
+                                temp_text += $"{ OnlineTime }, User switched to another app: from { counters.decoded["online_app"] }  to { decoded["online_app"] }{ Environment.NewLine }";
                                 changed = true;
                             }
                         }
                     }
-                    if (!counters.closed) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
+                    if (!(bool)counters.decoded["is_closed"]) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
                     {
-                        if (CheckAlbums.Checked && decoded.counters.albums != null && counters.albums != (int)decoded.counters.albums)
+                        if (CheckAlbums.Checked && decoded["counters"]["albums"] != null && counters.decoded["counters"]["albums"] != null && (int)counters.decoded["counters"]["albums"] != (int)decoded["counters"]["albums"])
                         {
-                            temp_text += $"{ TimeShort }, Update in albums: { counters.albums }  to { (int)decoded.counters.albums }{ Environment.NewLine }";
-                            counters.albums = (int)decoded.counters.albums;
+                            temp_text += $"{ CurrentTime }, Update in albums: { counters.decoded["counters"]["albums"] }  to { decoded["counters"]["albums"] }{ Environment.NewLine }";
                             changed = true;
                         }
-                        if (CheckAudios.Checked && decoded.counters.audios != null && counters.audios != (int)decoded.counters.audios)
+
+                        if (CheckAudios.Checked && decoded["counters"]["audios"] != null && counters.decoded["counters"]["audios"] != null && (int)counters.decoded["counters"]["audios"] != (int)decoded["counters"]["audios"])
                         {
-                            temp_text += $"{ TimeShort }, Update in audios: { counters.audios }  to { (int)decoded.counters.audios }{ Environment.NewLine }";
-                            counters.audios = (int)decoded.counters.audios;
+                            temp_text += $"{ CurrentTime }, Update in audios: { counters.decoded["counters"]["audios"] }  to { decoded["counters"]["audios"] }{ Environment.NewLine }";
                             changed = true;
                         }
-                        if (CheckGifts.Checked && decoded.counters.gifts != null && counters.gifts != (int)decoded.counters.gifts)
+
+                        if (CheckSubscriptions.Checked && decoded["counters"]["subscriptions"] != null && counters.decoded["counters"]["subscriptions"] != null && (int)counters.decoded["counters"]["subscriptions"] != (int)decoded["counters"]["subscriptions"])
                         {
-                            temp_text += $"{ TimeShort }, Update in gifts: { counters.gifts }  to { (int)decoded.counters.gifts }{ Environment.NewLine }";
-                            if ((int)decoded.counters.gifts > counters.gifts && continuous)
+                            temp_text += $"{ CurrentTime }, Update in subscpritions: { counters.decoded["counters"]["subscriptions"] }  to { decoded["counters"]["subscriptions"] }{ Environment.NewLine }";
+                            changed = true;
+                        }
+
+                        if (CheckClips.Checked && decoded["counters"]["clips_followers"] != null && counters.decoded["counters"]["clips_followers"] != null && (int)counters.decoded["counters"]["clips_followers"] != (int)decoded["counters"]["clips_followers"])
+                        {
+                            temp_text += $"{ CurrentTime }, Update in clips followers: { counters.decoded["counters"]["clips_followers"] }  to { decoded["counters"]["clips_followers"] }{ Environment.NewLine }";
+                            changed = true;
+                        }
+
+                        if (CheckPhotos.Checked && decoded["counters"]["photos"] != null && counters.decoded["counters"]["photos"] != null && (int)counters.decoded["counters"]["photos"] != (int)decoded["counters"]["photos"])
+                        {
+                            try
                             {
                                 Thread.Sleep(350);
-                                try 
+                                Get($"{ApiRequestLink}photos.getAll?owner_id={user_id}&need_hidden=1&access_token={AuthToken}&v={ApiVersion}");
+                                JObject photos = JObject.Parse(server_response);
+                                var photosresponse = photos["response"];
+                                if (counters.photos_response == null) counters.photos_response = (JObject)photosresponse;
+                                else
                                 {
-                                    Get($"{ApiRequestLink}gifts.get?user_id={user_id}&count={(int)decoded.counters.gifts - counters.gifts}&access_token={AuthToken}&v={ApiVersion}"); //get gifts
-                                    dynamic gifts = JObject.Parse(server_response);
-                                    var giftresponse = gifts.response;
-                                    foreach (var item in giftresponse.items) temp_text += $"   Gift from id: { (string)item.from_id }{ Environment.NewLine }   With message: {(string)item.message}{ Environment.NewLine }   Thumbnail: {(string)item.gift.thumb_256}{ Environment.NewLine }";
-                                } catch (Exception) { WriteToFile($"Exception thrown at gifts check{Environment.NewLine}"); }
+                                    temp_text += $"{ CurrentTime }, Update in photos: { counters.decoded["counters"]["photos"] }  to { decoded["counters"]["photos"] }{ Environment.NewLine }";
+                                    if ((int)counters.decoded["counters"]["photos"] < (int)decoded["counters"]["photos"])
+                                    {
+                                        List<string> OldPhotos = new List<string>();
+                                        foreach (var photo in counters.photos_response["items"]) OldPhotos.Add((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]);
+                                        foreach (var photo in photosresponse["items"])
+                                            if (!OldPhotos.Contains((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]))
+                                                temp_text += $"   New photo: {photo["sizes"][photo["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                    }
+                                    else
+                                    {
+                                        List<string> NewPhotos = new List<string>();
+                                        foreach (var photo in photosresponse["items"]) NewPhotos.Add((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]);
+                                        foreach (var photo in counters.photos_response["items"])
+                                            if (!NewPhotos.Contains((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]))
+                                                temp_text += $"   Removed photo: {photo["sizes"][photo["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                    }
+                                    changed = true;
+                                    counters.photos_response = (JObject)photosresponse;
+                                }
                             }
-                            counters.gifts = (int)decoded.counters.gifts;
-                            changed = true;
+                            catch (Exception e) { WriteToFile($"Exception thrown at photo check, {e.Message}{Environment.NewLine}"); }
                         }
-                        if (CheckPhotos.Checked && decoded.counters.photos != null && counters.photos != (int)decoded.counters.photos)
+
+                        if (CheckGifts.Checked && decoded["counters"]["gifts"] != null && counters.decoded["counters"]["gifts"] != null && (int)counters.decoded["counters"]["gifts"] != (int)decoded["counters"]["gifts"])
                         {
-                            temp_text += $"{ TimeShort }, Update in photos: { counters.photos }  to { (int)decoded.counters.photos }{ Environment.NewLine }";
-                            counters.photos = (int)decoded.counters.photos;
-                            changed = true;
+                            try 
+                            {
+                                Thread.Sleep(350);
+                                Get($"{ApiRequestLink}gifts.get?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}"); //get gifts
+                                JObject gifts = JObject.Parse(server_response);
+                                var giftsresponse = gifts["response"];
+                                if (counters.gifts_response == null) counters.gifts_response = (JObject)giftsresponse;
+                                else
+                                {
+                                    temp_text += $"{ CurrentTime }, Update in gifts: { counters.decoded["counters"]["gifts"] }  to { decoded["counters"]["gifts"] }{ Environment.NewLine }";
+                                    if ((int)counters.decoded["counters"]["gifts"] < (int)decoded["counters"]["gifts"])
+                                    {
+                                        List<string> OldGifts = new List<string>();
+                                        foreach (var gift in counters.gifts_response["items"]) OldGifts.Add((string)gift["from_id"]);
+                                        foreach (var gift in giftsresponse["items"])
+                                            if (!OldGifts.Contains((string)gift["from_id"]))
+                                                temp_text += $"   New gift from user: vk.com/id{ gift["from_id"] }{ Environment.NewLine }   With message: { gift["message"] }{ Environment.NewLine }   Thumbnail: { gift["gift"]["thumb_256"] }{ Environment.NewLine }";
+                                    }
+                                    else
+                                    {
+                                        List<string> NewGifts = new List<string>();
+                                        foreach (var gift in giftsresponse["items"]) NewGifts.Add((string)gift["from_id"]);
+                                        foreach (var gift in counters.gifts_response["items"])
+                                            if (!NewGifts.Contains((string)gift["from_id"]))
+                                                temp_text += $"   Removed gift from user: vk.com/id{ gift["from_id"] }{ Environment.NewLine }   With message: { gift["message"] }{ Environment.NewLine }   Thumbnail: { gift["gift"]["thumb_256"] }{ Environment.NewLine }";
+                                    }
+                                    changed = true;
+                                    counters.gifts_response = (JObject)giftsresponse;
+                                }
+                            } catch (Exception e) { WriteToFile($"Exception thrown at gifts check, {e.Message}{Environment.NewLine}"); }
+                        
                         }
-                        if (CheckSubscriptions.Checked && decoded.counters.subscriptions != null && counters.subscriptions != (int)decoded.counters.subscriptions)
+                    
+                        if (CheckVideos.Checked && decoded["counters"]["videos"] != null && counters.decoded["counters"]["videos"] != null && (int)counters.decoded["counters"]["videos"] != (int)decoded["counters"]["videos"])
                         {
-                            temp_text += $"{ TimeShort }, Update in subscpritions: { counters.subscriptions }  to { (int)decoded.counters.subscriptions }{ Environment.NewLine }";
-                            counters.subscriptions = (int)decoded.counters.subscriptions;
-                            changed = true;
-                        }
-                        if (CheckVideos.Checked && decoded.counters.videos != null && (int)decoded.counters.videos > 0 && counters.videos != (int)decoded.counters.videos)
-                        {
-                            temp_text += $"{ TimeShort }, Update in videos: { counters.videos }  to { (int)decoded.counters.videos }{ Environment.NewLine }";
-                            if ((int)decoded.counters.videos > counters.videos && continuous)
+                            try 
                             {
                                 Thread.Sleep(350); //timeout on api requests
-                                try 
+                                Get($"{ApiRequestLink}video.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                JObject videos = JObject.Parse(server_response);
+                                var videosresponse = videos["response"];
+                                if (counters.videos_response == null) counters.videos_response = (JObject)videosresponse;
+                                else 
                                 {
-                                    Get($"{ApiRequestLink}video.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
-                                    dynamic videos = JObject.Parse(server_response);
-                                    var videosresponse = videos.response;
-                                    for (int i = 0; i < (int)videosresponse.count - counters.videos; i++)
-                                        temp_text += $"   Video title: {(string)videosresponse.items[i].title}{ Environment.NewLine }"
-                                            + $"   Video link: {(string)videosresponse.items[i].player}{ Environment.NewLine }"
-                                            + $"   Video ID & Owner ID: {(string)videosresponse.items[i].id} & {(string)videosresponse.items[i].owner_id}{ Environment.NewLine }";
-                                } catch (Exception) { WriteToFile($"Exception thrown at video check{Environment.NewLine}"); }
-                            }
-                            counters.videos = (int)decoded.counters.videos;
-                            changed = true;
-                        }
-                        if (CheckClips.Checked && decoded.counters.clips_followers != null && counters.clips_followers != (int)decoded.counters.clips_followers)
-                        {
-                            temp_text += $"{ TimeShort }, Update in clips followers: { counters.clips_followers }  to { (int)decoded.counters.clips_followers }{ Environment.NewLine }";
-                            counters.clips_followers = (int)decoded.counters.clips_followers;
-                            changed = true;
-                        }
-                    }
-                    if (CheckPages.Checked && decoded.counters.pages != null && counters.pages != (int)decoded.counters.pages) //checks independently from private profile, but only in offline-online online-online online-offline modes
-                    {
-                        temp_text += $"{ TimeShort }, Update in pages: { counters.pages }  to { (int)decoded.counters.pages }{ Environment.NewLine }";
-                        counters.pages = (int)decoded.counters.pages;
-                        changed = true;
-                    }
-                    if (CheckStatus.Checked && decoded.activity != null && counters.activity != (string)decoded.activity) //checks independently from private profile, but only in offline-online online-online online-offline modes
-                    {
-                        temp_text += $"{ TimeShort }, Update in status: old '{ counters.activity }', new '{ (string)decoded.activity }'{ Environment.NewLine }";
-                        counters.activity = (string)decoded.activity;
-                        changed = true;
-                    }
-                    if (CheckFriends.Checked && decoded.counters.friends != null && counters.friends != (int)decoded.counters.friends) //checks in all modes including offline-offline, independetly from private profile
-                    {
-                        temp_text += $"{ TimeShort }, Update in friends: { counters.friends }  to { (int)decoded.counters.friends }{ Environment.NewLine }";
-                        if (!counters.closed && continuous)
-                        {
-                            Thread.Sleep(350); //timeout on api requests
-                            try
-                            {
-                                Get($"{ApiRequestLink}friends.get?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
-                                dynamic userfriends = JObject.Parse(server_response);
-                                var friendsresponse = userfriends.response;
-                                if (friendsresponse.count > counters.friends)
-                                    foreach (var addedfriend in friendsresponse.items)
-                                        if (!counters.friends_list.Contains(addedfriend.ToString()))
-                                        {
-                                            temp_text = temp_text.Trim('\n');
-                                            temp_text += $", new friend id: {addedfriend.ToString()}{ Environment.NewLine }";
-                                            counters.friends_list.Add(addedfriend.ToString());
-                                        }
-                                        else { }
-                                else
-                                {
-                                    List<string> TempListNew = friendsresponse.items.ToObject<List<string>>();
-                                    foreach (string removedfriend in counters.friends_list)
-                                        if (!TempListNew.Contains(removedfriend))
-                                        {
-                                            temp_text = temp_text.Trim('\n');
-                                            temp_text += $", removed friend id: {removedfriend}{ Environment.NewLine }";
-                                        }
-                                    counters.friends_list = TempListNew;
-                                }   
-                            }
-                            catch (Exception) { WriteToFile($"Exception thrown at friends check{Environment.NewLine}"); }
-                        }
-                        counters.friends = (int)decoded.counters.friends;
-                        changed = true;
-                    }
-                    if (CheckFollowers.Checked && !counters.closed && decoded.counters.followers != null && counters.followers != (int)decoded.counters.followers) //checks in all modes including offline-offline, but depends on private profile
-                    {
-                        temp_text += $"{ TimeShort }, Update in followers: { counters.followers }  to { (int)decoded.counters.followers }{ Environment.NewLine }";
-                        if (!counters.closed && continuous)
-                        {
-                            Thread.Sleep(350); //timeout on api requests
-                            try
-                            {
-                                Get($"{ApiRequestLink}users.getFollowers?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
-                                dynamic userfollowers = JObject.Parse(server_response);
-                                var followersresponse = userfollowers.response;
-                                if (followersresponse.count > counters.followers)
-                                    foreach (var addedfollower in followersresponse.items)
-                                        if (!counters.followers_list.Contains(addedfollower.ToString()))
-                                        {
-                                            temp_text = temp_text.Trim('\n');
-                                            temp_text += $", new follower id: {addedfollower.ToString()}{ Environment.NewLine }";
-                                            counters.followers_list.Add(addedfollower.ToString());
-                                        }
-                                        else { }
-                                else
-                                {
-                                    List<string> TempListNew = followersresponse.items.ToObject<List<string>>();
-                                    foreach (string removedfollower in counters.followers_list)
-                                        if (!TempListNew.Contains(removedfollower))
-                                        {
-                                            temp_text = temp_text.Trim('\n');
-                                            temp_text += $", removed follower id: {removedfollower}{ Environment.NewLine }";
-                                        }
-                                    counters.followers_list = TempListNew;
-                                }
-                            }
-                            catch (Exception) { WriteToFile($"Exception thrown at followers check{Environment.NewLine}"); }
-                        }
-                        counters.followers = (int)decoded.counters.followers;
-                        changed = true;
-                    }
-                    if (CheckPosts.Checked && !counters.closed && timeout) //depends on private profile
-                    {
-                        try
-                        {
-                            Thread.Sleep(350); //timeout on api requests
-                            Get($"{ApiRequestLink}wall.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}"); //get wall posts
-                            dynamic posts = JObject.Parse(server_response);
-                            var response = posts.response;
-                            if (response.count != null && counters.posts != (int)response.count)
-                            {
-                                temp_text += $"{ TimeShort }, Update in posts: { counters.posts }  to { (int)response.count }{ Environment.NewLine }";
-                                if ((int)response.count > counters.posts && continuous)
-                                {
-                                    for (int i = 0; i < (int)response.count - counters.posts; i++)
+                                    temp_text += $"{ CurrentTime }, Update in videos: { counters.decoded["counters"]["videos"] }  to { decoded["counters"]["videos"] }{ Environment.NewLine }";
+                                    if ((int)counters.decoded["counters"]["videos"] < (int)decoded["counters"]["videos"])
                                     {
-                                        if (response.items[i].text != null && (string)response.items[i].text != "")
-                                            temp_text += $"   Post text: {(string)response.items[i].text}{ Environment.NewLine }";
-                                        if (response.items[i].attachments != null)
-                                            foreach (var attachment in response.items[i].attachments)
-                                                switch ((string)attachment.type)
-                                                {
-                                                    case "photo":
-                                                        { temp_text += $"   Attached image: {(string)attachment.photo.sizes[attachment.photo.sizes.Count - 1].url}{ Environment.NewLine }"; }
-                                                        break;
-                                                    case "video":
-                                                        { temp_text += $"   Attached video title: {(string)attachment.video.title}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment.video.id} & {(string)attachment.video.id}{ Environment.NewLine }"; }
-                                                        break;
-                                                    case "audio":
-                                                        { temp_text += $"   Attached audio: {(string)attachment.audio.artist}   —  {(string)attachment.audio.title}{ Environment.NewLine }"; }
-                                                        break;
-                                                    case "link":
-                                                        { temp_text += $"   Attached link: {(string)attachment.link.url}{ Environment.NewLine }"; }
-                                                        break;
-                                                    case "doc":
-                                                        { temp_text += $"   Attached document: {(string)attachment.doc.title}{ Environment.NewLine }    Document link: {(string)attachment.doc.url}{ Environment.NewLine }"; }
-                                                        break;
-                                                }
+                                        List<string> OldVideos = new List<string>();
+                                        foreach (var video in counters.videos_response["items"]) OldVideos.Add((string)video["id"]);
+                                        foreach (var video in videosresponse["items"])
+                                            if (!OldVideos.Contains((string)video["id"]))
+                                                temp_text += $"   New video:{ Environment.NewLine }   Title: {(string)video["title"]}{ Environment.NewLine }"
+                                        + $"   Video link: {(string)video["player"]}{ Environment.NewLine }"
+                                        + $"   Video ID & Owner ID: {(string)video["id"]} & {(string)video["owner_id"]}{ Environment.NewLine }";
+                                    }
+                                    else
+                                    {
+                                        List<string> NewVideos = new List<string>();
+                                        foreach (var video in videosresponse["items"]) NewVideos.Add((string)video["id"]);
+                                        foreach (var video in counters.videos_response["items"])
+                                            if (!NewVideos.Contains((string)video["id"]))
+                                                temp_text += $"   Removed video:{ Environment.NewLine }   Title: {(string)video["title"]}{ Environment.NewLine }"
+                                        + $"   Video link: {(string)video["player"]}{ Environment.NewLine }"
+                                        + $"   Video ID & Owner ID: {(string)video["id"]} & {(string)video["owner_id"]}{ Environment.NewLine }";
+                                    }
+                                    changed = true;
+                                    counters.videos_response = (JObject)videosresponse;
+                                }
+                            } catch (Exception e) { WriteToFile($"Exception thrown at video check, {e.Message}{Environment.NewLine}"); }  
+                        }
+
+                        if (CheckFriends.Checked && decoded["counters"]["friends"] != null && counters.decoded["counters"]["friends"] != null && (int)counters.decoded["counters"]["friends"] != (int)decoded["counters"]["friends"])
+                        {
+                            try
+                            {
+                                Thread.Sleep(350); //timeout on api requests
+                                Get($"{ApiRequestLink}friends.get?user_id={user_id}&fields=name&access_token={AuthToken}&v={ApiVersion}");
+                                JObject friends = JObject.Parse(server_response);
+                                var friendsresponse = friends["response"];
+                                if (counters.friends_response == null) counters.friends_response = (JObject)friendsresponse;
+                                else
+                                {
+                                    temp_text += $"{ CurrentTime }, Update in friends: { counters.decoded["counters"]["friends"] }  to { decoded["counters"]["friends"] }{ Environment.NewLine }";
+                                    if ((int)counters.decoded["counters"]["friends"] < (int)decoded["counters"]["friends"])
+                                    {
+                                        List<string> OldFriends = new List<string>();
+                                        foreach (var friend in counters.friends_response["items"]) OldFriends.Add((string)friend["id"]);
+                                        foreach (var friend in friendsresponse["items"])
+                                            if (!OldFriends.Contains((string)friend["id"]))
+                                                temp_text += $"   New friend: {friend["first_name"]} {friend["last_name"]}, vk.com/id{friend["id"]}{ Environment.NewLine }";
+                                    }
+                                    else
+                                    {
+                                        List<string> NewFriends = new List<string>();
+                                        foreach (var friend in friendsresponse["items"]) NewFriends.Add((string)friend["id"]);
+                                        foreach (var friend in counters.friends_response["items"])
+                                            if (!NewFriends.Contains((string)friend["id"]))
+                                                temp_text += $"   Removed friend: {friend["first_name"]} {friend["last_name"]}, vk.com/id{friend["id"]}{ Environment.NewLine }";
                                     }
                                 }
-                                counters.posts = (int)response.count;
                                 changed = true;
-                            }
-                            timeout = false;
-                            timer.Start();
+                                counters.friends_response = (JObject)friendsresponse;
+                            } catch (Exception e) { WriteToFile($"Exception thrown at friends check{Environment.NewLine}{e.Message}"); }
                         }
-                        catch (Exception) { WriteToFile($"Exception thrown at posts, probably too many requests were made{Environment.NewLine}"); CheckPosts.Checked = false; }
+
+                        if (CheckFollowers.Checked && decoded["counters"]["followers"] != null && counters.decoded["counters"]["followers"] != null && (int)counters.decoded["counters"]["followers"] != (int)decoded["counters"]["followers"]) //checks in all modes including offline-offline, but depends on private profile
+                        {
+                            try
+                            {
+                                Thread.Sleep(350); //timeout on api requests
+                                Get($"{ApiRequestLink}users.getFollowers?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                JObject followers = JObject.Parse(server_response);
+                                var followersresponse = followers["response"];
+                                if (counters.followers_response == null) counters.followers_response = (JObject)followersresponse;
+                                else
+                                {
+                                    temp_text += $"{ CurrentTime }, Update in followers: { counters.decoded["counters"]["followers"] }  to { decoded["counters"]["followers"] }{ Environment.NewLine }";
+                                    if ((int)counters.decoded["counters"]["followers"] < (int)decoded["counters"]["followers"])
+                                    {
+                                        List<string> OldFollowers = new List<string>();
+                                        foreach (var follower in counters.followers_response["items"]) OldFollowers.Add((string)follower["id"]);
+                                        foreach (var follower in followersresponse["items"])
+                                            if (!OldFollowers.Contains((string)follower["id"]))
+                                                temp_text += $"   New follower: {follower["first_name"]} {follower["last_name"]}, vk.com/id{follower["id"]}{ Environment.NewLine }";
+                                    }
+                                    else
+                                    {
+                                        List<string> NewFollowers = new List<string>();
+                                        foreach (var follower in followersresponse["items"]) NewFollowers.Add((string)follower["id"]);
+                                        foreach (var follower in counters.followers_response["items"])
+                                            if (!NewFollowers.Contains((string)follower["id"]))
+                                                temp_text += $"   Removed follower: {follower["first_name"]} {follower["last_name"]}, vk.com/id{follower["id"]}{ Environment.NewLine }";
+                                    }
+                                }
+                                changed = true;
+                                counters.followers_response = (JObject)followersresponse;
+                            } catch (Exception e) { WriteToFile($"Exception thrown at followers check{Environment.NewLine}{e.Message}"); }
+                        }
+                        if (CheckPosts.Checked && timeout) //depends on private profile
+                        {
+                            try
+                            {
+                                Thread.Sleep(350); //timeout on api requests
+                                Get($"{ApiRequestLink}wall.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}"); //get wall posts
+                                JObject posts = JObject.Parse(server_response);
+                                var postsresponse = posts["response"];
+                                if (counters.posts_response == null) counters.posts_response = (JObject)postsresponse;
+                                else if ((int)counters.posts_response["count"] != (int)postsresponse["count"])
+                                {
+                                    temp_text += $"{ CurrentTime }, Update in posts: { counters.posts_response["count"] }  to { postsresponse["count"] }{ Environment.NewLine }";
+                                    if ((int)counters.posts_response["count"] < (int)postsresponse["count"])
+                                    {
+                                        List<string> OldPosts = new List<string>();
+                                        foreach (var post in counters.posts_response["items"]) OldPosts.Add((string)post["id"]);
+                                        foreach (var post in postsresponse["items"])
+                                            if (!OldPosts.Contains((string)post["id"]))
+                                            {
+                                                temp_text += $"   New post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
+                                                if (post["text"] != null && (string)post["text"] != "")
+                                                    temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
+                                                if (post["attachments"] != null)
+                                                    foreach (var attachment in post["attachments"])
+                                                        switch ((string)attachment["type"])
+                                                        {
+                                                            case "photo":
+                                                                { temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "video":
+                                                                { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "audio":
+                                                                { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "link":
+                                                                { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "doc":
+                                                                { temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                        }
+                                            }
+                                            
+                                    }
+                                    else
+                                    {
+                                        List<string> NewPosts = new List<string>();
+                                        foreach (var post in postsresponse["items"]) NewPosts.Add((string)post["id"]);
+                                        foreach (var post in counters.posts_response["items"])
+                                            if (!NewPosts.Contains((string)post["id"]))
+                                            {
+                                                temp_text += $"   New post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
+                                                if (post["text"] != null && (string)post["text"] != "")
+                                                    temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
+                                                if (post["attachments"] != null)
+                                                    foreach (var attachment in post["attachments"])
+                                                        switch ((string)attachment["type"])
+                                                        {
+                                                            case "photo":
+                                                                { temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "video":
+                                                                { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "audio":
+                                                                { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "link":
+                                                                { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                            case "doc":
+                                                                { temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }"; }
+                                                                break;
+                                                        }
+                                            }
+                                    }
+                                    changed = true;
+                                    counters.posts_response = (JObject)postsresponse;
+                                }
+                                timeout = false;
+                                timer.Start();
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); CheckPosts.Checked = false; }
+                        }
                     }
-                    if (changed && continuous) EventLogs.Invoke((MethodInvoker)delegate
+                
+                    if (CheckPages.Checked && decoded["counters"]["pages"] != null && (int)counters.decoded["counters"]["pages"] != (int)decoded["counters"]["pages"]) //checks independently from private profile, but only in offline-online online-online online-offline modes
                     {
-                        if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') temp_text = $"  { DateTime }{ Environment.NewLine }" + temp_text;
+                        temp_text += $"{ CurrentTime }, Update in pages: { counters.decoded["counters"]["pages"] }  to { decoded["counters"]["pages"] }{ Environment.NewLine }";
+                        changed = true;
+                    }
+                    if (CheckStatus.Checked && decoded["activity"] != null && counters.decoded["activity"] != null && (string)counters.decoded["activity"] != (string)decoded["activity"]) //checks independently from private profile, but only in offline-online online-online online-offline modes
+                    {
+                        temp_text += $"{ CurrentTime }, Update in status: old '{ counters.decoded["activity"] }', new '{ decoded["activity"] }'{ Environment.NewLine }";
+                        changed = true;
+                    }
+
+                    if (changed) EventLogs.Invoke((MethodInvoker)delegate
+                    {
+                        if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') temp_text = $"  { OnlineDateTime }{ Environment.NewLine }" + temp_text;
                         WriteToFile(temp_text);
-                        if (counters.online == (bool)decoded.online && counters.online) counters.online = !counters.online;
+                        if ((bool)counters.decoded["online"] == (bool)decoded["online"] && (bool)counters.decoded["online"]) counters.decoded["online"] = !(bool)counters.decoded["online"];
+                        changed = false;
                     });
-                    changed = false;
-                    if (!continuous) continuous = true; //if 'while' is not on its first itteration
-                                                        //Main ONLINE-OFFLINE checking part
-                    if (counters.online != (bool)decoded.online) //if 'online status' changed
+
+                    if ((bool)counters.decoded["online"] != (bool)decoded["online"]) //if 'online status' changed
                     {
-                        if (!counters.online && (bool)decoded.online) //if changes were committed or offline to online transition happened
+                        if (!(bool)counters.decoded["online"] && (bool)decoded["online"]) //if changes were committed or offline to online transition happened
                             if (CheckOnlineDevice.Checked)
-                                if (onlineappid != string.Empty && newplatform != string.Empty) WriteToFile($"Online {newplatform}, {onlineappid}: { DateTime }   —");
-                                else WriteToFile($"Online {newplatform}: { DateTime }   —");
-                            else WriteToFile($"Online: { DateTime }   —");
-                        else WriteToFile($"  { DateTime }{ Environment.NewLine }"); //if transition online to offline happened
-                        counters.online = (bool)decoded.online;
+                                if (onlineappid != string.Empty && newplatform != string.Empty) WriteToFile($"Online {newplatform}, {onlineappid}: { OnlineDateTime }   —");
+                                else WriteToFile($"Online {newplatform}: { OnlineDateTime }   —");
+                            else WriteToFile($"Online: { OnlineDateTime }   —");
+                        else WriteToFile($"  { OnlineDateTime }{ Environment.NewLine }"); //if transition online to offline happened
                     }
-                }
-                catch (Exception) { WriteToFile($"Global error, possibly get counters failed{Environment.NewLine}"); }
-                Thread.Sleep(350); //timeout on api requests
+                    counters.decoded = (JObject)decoded;
+                } catch (Exception e) { WriteToFile($"Global error, possibly get counters failed{Environment.NewLine}{e.Message}"); }
+                Thread.Sleep(350);
             }
         }
-
-        private void Timer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            throw new NotImplementedException();
-        }
-
         private void WriteToFile(string text)
         {
-            string[] str = File.ReadAllLines(Application.StartupPath + $"\\{user_id}.txt");
+            string[] str = File.ReadAllLines(Application.StartupPath + $"\\Logs\\{user_id}.txt");
             EventLogs.Invoke((MethodInvoker)delegate 
             { 
                 EventLogs.AppendText(text); 
             });
-            if (Logs.Checked) File.AppendAllText(Application.StartupPath + $"\\{user_id}.txt", text);
+            if (Logs.Checked) File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", text);
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
@@ -459,11 +562,13 @@ namespace Stalker
             if (FriendsIdList.Count > 0 && ListOfIDs.SelectedIndex < FriendsIdList.Count) user_id = Convert.ToInt32(FriendsIdList[ListOfIDs.SelectedIndex]);
             else if (CustomIdList.Count > 0 && ListOfIDs.SelectedIndex >= FriendsIdList.Count) user_id = Convert.ToInt32(CustomIdList[ListOfIDs.SelectedIndex - FriendsIdList.Count]);
             if (Logs.Checked)
-                if (File.Exists(Application.StartupPath + $"\\{user_id}.txt")) EventLogs.Invoke((MethodInvoker)delegate { EventLogs.Text = File.ReadAllText(Application.StartupPath + $"\\{user_id}.txt"); });
-                else
+                if (File.Exists(Application.StartupPath + $"\\Logs\\{user_id}.txt")) EventLogs.Invoke((MethodInvoker)delegate { EventLogs.Text = ""; EventLogs.AppendText(File.ReadAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt")); });
+                else 
                 {
-                    File.AppendAllText(Application.StartupPath + $"\\{user_id}.txt", $"Log file for user id{user_id}");
-                    EventLogs.Text = File.ReadAllText(Application.StartupPath + $"\\{user_id}.txt");
+                    if (!Directory.Exists(Application.StartupPath + "\\Logs")) Directory.CreateDirectory(Application.StartupPath + "\\Logs");
+                    File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", $"Log file for user id{user_id}");
+                    EventLogs.Text = "";
+                    EventLogs.AppendText(File.ReadAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt"));
                 }
         }
         private void CustomUserIdEntered(object sender, KeyEventArgs e)
@@ -505,8 +610,9 @@ namespace Stalker
         private void Stop()
         {
             StartStopLabel.Text = "Start";
+            LastOnlineLabel.Text = "Last Online";
             if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') 
-                WriteToFile($"  { DateTime }{ Environment.NewLine }");
+                WriteToFile($"  { OnlineDateTime }{ Environment.NewLine }");
             ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = true;
             RestrictToggles(false);
         }
@@ -543,6 +649,11 @@ namespace Stalker
             configuration.Save(ConfigurationSaveMode.Full, true);
             ConfigurationManager.RefreshSection("appSettings");
         }
+        private void CustomAppIdToggled(object sender, EventArgs e)
+        {
+            if (CustomAppIdToggle.Checked) CustomAppId.Enabled = true;
+            else CustomAppId.Enabled = false;
+        }
         private List<KeyValuePair<string, string>> SettingsList()
         {
             string temp_ids = "";
@@ -577,6 +688,8 @@ namespace Stalker
                 new KeyValuePair<string, string>("ClearCookies", ClearCookies.Checked.ToString()),
                 new KeyValuePair<string, string>("SelectedUser", ListOfIDs.SelectedIndex.ToString()),
                 new KeyValuePair<string, string>("Autostart", Autostart.Checked.ToString()),
+                new KeyValuePair<string, string>("CustomAppIdToggle", CustomAppIdToggle.Checked.ToString()),
+                new KeyValuePair<string, string>("CustomAppId", CustomAppId.Text),
             };
             return settingslist;
         }
@@ -601,6 +714,8 @@ namespace Stalker
             CheckClips.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClipsFollowers"]);
             OpenSettings.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["OpenSettings"]);
             SaveToken.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["SaveToken"]);
+            CustomAppIdToggle.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["CustomAppIdToggle"]);
+            CustomAppId.Text = ConfigurationManager.AppSettings["CustomAppId"];
             if (SaveToken.Checked) AuthToken = ConfigurationManager.AppSettings["AuthToken"];
             else AuthToken = "";
             ClearCookies.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClearCookies"]);
@@ -619,24 +734,13 @@ namespace Stalker
     }
     public class Counters
     {
-        public bool closed = false;
-        public bool online = false;
-        public int albums = 0;
-        public int audios = 0;
-        public int followers = 0;
-        public int friends = 0;
-        public int gifts = 0;
-        public int pages = 0;
-        public int photos = 0;
-        public int posts = 0;
-        public int subscriptions = 0;
-        public int videos = 0;
-        public int clips_followers = 0;
-        public string activity = string.Empty;
-        public string platform = "Unidentified";
-        public string onlineappid = "Unidentified";
-        public List<string> friends_list = new List<string>();
-        public List<string> followers_list = new List<string>();
+        public JObject decoded = null;
+        public JObject photos_response = null;
+        public JObject gifts_response = null;
+        public JObject videos_response = null;
+        public JObject friends_response = null;
+        public JObject followers_response = null;
+        public JObject posts_response = null;
         public string LastOnline = string.Empty;
     }
 }
