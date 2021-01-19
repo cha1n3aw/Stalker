@@ -31,16 +31,15 @@ namespace Stalker
         private string _link;
         private string link
         { 
-            get { return _link; } 
             set 
             { 
                 if (!Directory.Exists(Application.StartupPath + "\\Files"))
                     Directory.CreateDirectory(Application.StartupPath + "\\Files");
-                string directory = $"{Application.StartupPath}\\Files\\{Regex.Match(_link, @"(?:[^/][\d\w\.]+)(?<=(?:.jpg)|(?:.mp4)|(?:.jpeg)|(?:.png)|(?:.pdf)|(?:.gif)|(?:.doc)|(?:.docx))").Value}";
+                string directory = $"{Application.StartupPath}\\Files\\{Regex.Match(value, @"(?:[^/][\d\w\.]+)(?<=(?:.jpg)|(?:.mp4)|(?:.jpeg)|(?:.png)|(?:.pdf)|(?:.gif)|(?:.doc))").Value}";
                 if (!File.Exists(directory))
                 using (WebClient wc = new WebClient())
                         wc.DownloadFileAsync(new Uri(value), directory);
-                WriteToFile($"   Downloaded file: {directory}{Environment.NewLine}");
+                _link = $"   Downloaded file: {directory}";
             } 
         }
 
@@ -268,7 +267,7 @@ namespace Stalker
                                         foreach (var subscription in counters.subscriptions_response["items"]) OldSubscriptions.Add((string)subscription["id"]);
                                         foreach (var subscription in subscriptionsresponse["items"])
                                             if (!OldSubscriptions.Contains((string)subscription["id"]))
-                                                temp_text += $"   New subsription:{ Environment.NewLine }   Link: vk.com/public{subscription["id"]}{ Environment.NewLine }   Name: {subscription["name"]}";
+                                                temp_text += $"   New subscription:{ Environment.NewLine }   Link: vk.com/public{subscription["id"]}{ Environment.NewLine }   Name: {subscription["name"]}";
                                     }
                                     else
                                     {
@@ -276,7 +275,7 @@ namespace Stalker
                                         foreach (var subscription in subscriptionsresponse["items"]) NewSubscriptions.Add((string)subscription["id"]);
                                         foreach (var subscription in counters.subscriptions_response["items"])
                                             if (!NewSubscriptions.Contains((string)subscription["id"]))
-                                                temp_text += $"   Removed subsription:{ Environment.NewLine }   Link: vk.com/public{subscription["id"]}{ Environment.NewLine }   Name: {subscription["name"]}";
+                                                temp_text += $"   Removed subscription:{ Environment.NewLine }   Link: vk.com/public{subscription["id"]}{ Environment.NewLine }   Name: {subscription["name"]}";
                                     }
                                     changed = true;
                                     counters.subscriptions_response = (JObject)subscriptionsresponse;
@@ -311,7 +310,11 @@ namespace Stalker
                                             if (!OldPhotos.Contains((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]))
                                             {
                                                 temp_text += $"   New photo: {photo["sizes"][photo["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
-                                                if (DownloadFiles.Checked) link = (string)photo["sizes"][photo["sizes"].Count() - 1]["url"];
+                                                if (DownloadFiles.Checked)
+                                                {
+                                                    link = (string)photo["sizes"][photo["sizes"].Count() - 1]["url"];
+                                                    temp_text += $"{_link}{Environment.NewLine}";
+                                                }
                                             }
                                     }
                                     else
@@ -320,9 +323,13 @@ namespace Stalker
                                         foreach (var photo in photosresponse["items"]) NewPhotos.Add((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]);
                                         foreach (var photo in counters.photos_response["items"])
                                             if (!NewPhotos.Contains((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]))
-                                            {
+                                            { 
                                                 temp_text += $"   Removed photo: {photo["sizes"][photo["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
-                                                if (DownloadFiles.Checked) link = (string)photo["sizes"][photo["sizes"].Count() - 1]["url"];
+                                                if (DownloadFiles.Checked)
+                                                {
+                                                    link = (string)photo["sizes"][photo["sizes"].Count() - 1]["url"];
+                                                    temp_text += $"{_link}{Environment.NewLine}";
+                                                }
                                             }  
                                     }
                                     changed = true;
@@ -505,8 +512,12 @@ namespace Stalker
                                                         {
                                                             case "photo":
                                                                 {
-                                                                    if (DownloadFiles.Checked) link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
                                                                     temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
                                                                 }
                                                                 break;
                                                             case "video":
@@ -520,8 +531,12 @@ namespace Stalker
                                                                 break;
                                                             case "doc":
                                                                 {
-                                                                    if (DownloadFiles.Checked) link = (string)attachment["doc"]["url"];
                                                                     temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)attachment["doc"]["url"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
                                                                 }
                                                                 break;
                                                         }
@@ -543,8 +558,12 @@ namespace Stalker
                                                         {
                                                             case "photo":
                                                                 {
-                                                                    if (DownloadFiles.Checked) link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
-                                                                    temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }"; 
+                                                                    temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
                                                                 }
                                                                 break;
                                                             case "video":
@@ -558,8 +577,12 @@ namespace Stalker
                                                                 break;
                                                             case "doc":
                                                                 {
-                                                                    if (DownloadFiles.Checked) link = (string)attachment["doc"]["url"];
                                                                     temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)attachment["doc"]["url"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
                                                                 }
                                                                 break;
                                                         }
@@ -571,7 +594,7 @@ namespace Stalker
                                 timeout = false;
                                 timer.Start();
                             }
-                            catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); CheckPosts.Checked = false; }
+                            catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); BeginInvoke(new MethodInvoker(delegate { CheckPosts.Checked = false; }));  }
                         }
                         if (CheckStories.Checked && timeout)
                         {
@@ -579,7 +602,6 @@ namespace Stalker
                             {
                                 Thread.Sleep(350);
                                 Get($"{ApiRequestLink}stories.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
-                                WriteToFile(server_response);
                                 JObject stories = JObject.Parse(server_response);
                                 var storiesresponse = stories["response"]["items"][0];
                                 if (counters.stories_response == null) counters.stories_response = (JObject)storiesresponse;
@@ -597,14 +619,22 @@ namespace Stalker
                                                 {
                                                     case "photo":
                                                         {
-                                                            if (DownloadFiles.Checked) link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
                                                             temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                            if (DownloadFiles.Checked)
+                                                            {
+                                                                link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
+                                                                temp_text += $"{_link}{Environment.NewLine}";
+                                                            }
                                                         } 
                                                         break;
                                                     case "video":
                                                         {
-                                                            if (DownloadFiles.Checked) link = (string)story["video"]["player"];
                                                             temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
+                                                            if (DownloadFiles.Checked)
+                                                            {
+                                                                link = (string)story["video"]["player"];
+                                                                temp_text += $"{_link}{Environment.NewLine}";
+                                                            }
                                                         } 
                                                         break;
                                                 }
@@ -621,14 +651,22 @@ namespace Stalker
                                                 {
                                                     case "photo":
                                                         {
-                                                            if (DownloadFiles.Checked) link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
                                                             temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                            if (DownloadFiles.Checked)
+                                                            {
+                                                                link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
+                                                                temp_text += $"{_link}{Environment.NewLine}";
+                                                            }
                                                         }
                                                         break;
                                                     case "video":
                                                         {
-                                                            if (DownloadFiles.Checked) link = (string)story["video"]["player"];
                                                             temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
+                                                            if (DownloadFiles.Checked)
+                                                            {
+                                                                link = (string)story["video"]["player"];
+                                                                temp_text += $"{_link}{Environment.NewLine}";
+                                                            }
                                                         }
                                                         break;
                                                 }

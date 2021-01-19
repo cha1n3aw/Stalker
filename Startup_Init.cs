@@ -11,6 +11,7 @@ namespace Stalker
         [STAThread]
         static void Main()
         {
+#if DEBUG
             GuidAttribute attribute = (GuidAttribute)typeof(Stratup_Init).Assembly.GetCustomAttributes(typeof(GuidAttribute), true)[0];
             using (Mutex mutex = new Mutex(false, @"Global\" + attribute.Value))
             {
@@ -20,6 +21,7 @@ namespace Stalker
                     return;
                 }
             }
+#endif
             GC.Collect();
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
