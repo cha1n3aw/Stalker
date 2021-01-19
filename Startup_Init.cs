@@ -19,12 +19,12 @@ namespace Stalker
                     MetroFramework.MetroMessageBox.Show(new MetroFramework.Forms.MetroForm { Location = new Point((Screen.PrimaryScreen.WorkingArea.Width - 400) / 2, (Screen.PrimaryScreen.WorkingArea.Height - 100) / 2) }, "\n\nStalker is already running", "Unable to start", MessageBoxButtons.OK, MessageBoxIcon.None);
                     return;
                 }
-                GC.Collect();
-                Application.EnableVisualStyles();
-                Application.SetCompatibleTextRenderingDefault(false);
-                Stalker MainFormInstance = new Stalker();
-                Application.Run(MainFormInstance);
-           }
+            }
+            GC.Collect();
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+            Stalker MainFormInstance = new Stalker();
+            Application.Run(MainFormInstance);
         }
     }
 }

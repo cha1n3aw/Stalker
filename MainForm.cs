@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -23,10 +24,25 @@ namespace Stalker
         private List<string> FriendsIdList = new List<string>();
         private List<string> CustomIdList = new List<string>();
         private int user_id = 0;
-        private readonly int WindowHeight = 528;
+        private readonly int WindowHeight = 549;
         string OnlineDateTime = string.Empty;
         Thread Stalking;
         System.Timers.Timer timer;
+        private string _link;
+        private string link
+        { 
+            get { return _link; } 
+            set 
+            { 
+                if (!Directory.Exists(Application.StartupPath + "\\Files"))
+                    Directory.CreateDirectory(Application.StartupPath + "\\Files");
+                string directory = $"{Application.StartupPath}\\Files\\{Regex.Match(_link, @"(?:[^/][\d\w\.]+)(?<=(?:.jpg)|(?:.mp4)|(?:.jpeg)|(?:.png)|(?:.pdf)|(?:.gif)|(?:.doc)|(?:.docx))").Value}";
+                if (!File.Exists(directory))
+                using (WebClient wc = new WebClient())
+                        wc.DownloadFileAsync(new Uri(value), directory);
+                WriteToFile($"   Downloaded file: {directory}{Environment.NewLine}");
+            } 
+        }
 
         private void Get(string uri) { server_response = new WebClient { Encoding = Encoding.UTF8 }.DownloadString(uri); }
         private void FetchFriends()
@@ -88,11 +104,13 @@ namespace Stalker
                     {
                         counters.decoded = (JObject)decoded;
                         counters.decoded["online"] = false;
-                        counters.decoded["counters"]["photos"] = 0;
-                        counters.decoded["counters"]["gifts"] = 0;
-                        counters.decoded["counters"]["videos"] = 0;
-                        counters.decoded["counters"]["followers"] = 0;
-                        counters.decoded["counters"]["friends"] = 0;
+                        counters.decoded["counters"]["photos"] = -1;
+                        counters.decoded["counters"]["gifts"] = -1;
+                        counters.decoded["counters"]["videos"] = -1;
+                        counters.decoded["counters"]["followers"] = -1;
+                        counters.decoded["counters"]["friends"] = -1;
+                        counters.decoded["counters"]["albums"] = -1;
+                        counters.decoded["counters"]["subscriptions"] = -1;
                         counters.decoded["is_closed"] = false;
                     }
 
@@ -161,19 +179,19 @@ namespace Stalker
                             switch ((string)decoded["online_app"])
                             {
                                 case "2274003":
-                                    { decoded["online_app"] = "Android VK"; }
+                                    { decoded["online_app"] = "Android App"; }
                                     break;
                                 case "3140623":
-                                    { decoded["online_app"] = "iPhone VK"; }
+                                    { decoded["online_app"] = "iOS App"; }
                                     break;
                                 case "3682744":
-                                    { decoded["online_app"] = "iPad VK"; }
+                                    { decoded["online_app"] = "iPadOS App"; }
                                     break;
                                 case "3697615":
-                                    { decoded["online_app"] = "Windows Desktop VK"; }
+                                    { decoded["online_app"] = "Windows Desktop App"; }
                                     break;
                                 case "3502557":
-                                    { decoded["online_app"] = "Windows Phone VK"; }
+                                    { decoded["online_app"] = "Windows Phone App"; }
                                     break;
                                 case "2685278":
                                     { decoded["online_app"] = "Kate Mobile"; }
@@ -209,7 +227,7 @@ namespace Stalker
                                         foreach (var album in counters.albums_response["items"]) OldAlbums.Add((string)album["id"]);
                                         foreach (var album in albumsresponse["items"])
                                             if (!OldAlbums.Contains((string)album["id"]))
-                                                temp_text += $"   New album:{ Environment.NewLine }   Link: vk.com/album{user_id}_{album["id"]}{ Environment.NewLine }   Title: {album["title"]}";
+                                                temp_text += $"   New album:{ Environment.NewLine }   Link: vk.com/album{user_id}_{album["id"]}{ Environment.NewLine }   Title: {album["title"]}{ Environment.NewLine }";
                                     }
                                     else
                                     {
@@ -217,7 +235,7 @@ namespace Stalker
                                         foreach (var album in albumsresponse["items"]) NewAlbums.Add((string)album["id"]);
                                         foreach (var album in counters.albums_response["items"])
                                             if (!NewAlbums.Contains((string)album["id"]))
-                                                temp_text += $"   Removed album:{ Environment.NewLine }   Link (unavailaible): vk.com/album{user_id}_{album["id"]}{ Environment.NewLine }   Title: {album["title"]}";
+                                                temp_text += $"   Removed album:{ Environment.NewLine }   Link (unavailaible): vk.com/album{user_id}_{album["id"]}{ Environment.NewLine }   Title: {album["title"]}{ Environment.NewLine }";
                                     }
                                     changed = true;
                                     counters.albums_response = (JObject)albumsresponse;
@@ -291,7 +309,10 @@ namespace Stalker
                                         foreach (var photo in counters.photos_response["items"]) OldPhotos.Add((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]);
                                         foreach (var photo in photosresponse["items"])
                                             if (!OldPhotos.Contains((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]))
+                                            {
                                                 temp_text += $"   New photo: {photo["sizes"][photo["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                if (DownloadFiles.Checked) link = (string)photo["sizes"][photo["sizes"].Count() - 1]["url"];
+                                            }
                                     }
                                     else
                                     {
@@ -299,7 +320,10 @@ namespace Stalker
                                         foreach (var photo in photosresponse["items"]) NewPhotos.Add((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]);
                                         foreach (var photo in counters.photos_response["items"])
                                             if (!NewPhotos.Contains((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]))
+                                            {
                                                 temp_text += $"   Removed photo: {photo["sizes"][photo["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                if (DownloadFiles.Checked) link = (string)photo["sizes"][photo["sizes"].Count() - 1]["url"];
+                                            }  
                                     }
                                     changed = true;
                                     counters.photos_response = (JObject)photosresponse;
@@ -360,9 +384,12 @@ namespace Stalker
                                         foreach (var video in counters.videos_response["items"]) OldVideos.Add((string)video["id"]);
                                         foreach (var video in videosresponse["items"])
                                             if (!OldVideos.Contains((string)video["id"]))
-                                                temp_text += $"   New video:{ Environment.NewLine }   Title: {(string)video["title"]}{ Environment.NewLine }"
-                                        + $"   Video link: {(string)video["player"]}{ Environment.NewLine }"
-                                        + $"   Video ID & Owner ID: {(string)video["id"]} & {(string)video["owner_id"]}{ Environment.NewLine }";
+                                            {
+                                                link = (string)video["player"];
+                                                temp_text += $"   New video:{ Environment.NewLine }   Title: {video["title"]}{ Environment.NewLine }"
+                                                    + $"   Video link: {video["player"]}{ Environment.NewLine }"
+                                                    + $"   Video ID & Owner ID: {video["id"]} & {video["owner_id"]}{ Environment.NewLine }";
+                                            }
                                     }
                                     else
                                     {
@@ -370,9 +397,12 @@ namespace Stalker
                                         foreach (var video in videosresponse["items"]) NewVideos.Add((string)video["id"]);
                                         foreach (var video in counters.videos_response["items"])
                                             if (!NewVideos.Contains((string)video["id"]))
-                                                temp_text += $"   Removed video:{ Environment.NewLine }   Title: {(string)video["title"]}{ Environment.NewLine }"
-                                        + $"   Video link: {(string)video["player"]}{ Environment.NewLine }"
-                                        + $"   Video ID & Owner ID: {(string)video["id"]} & {(string)video["owner_id"]}{ Environment.NewLine }";
+                                            {
+                                                link = (string)video["player"];
+                                                temp_text += $"   Removed video:{ Environment.NewLine }   Title: {video["title"]}{ Environment.NewLine }"
+                                                    + $"   Video link: {video["player"]}{ Environment.NewLine }"
+                                                    + $"   Video ID & Owner ID: {video["id"]} & {video["owner_id"]}{ Environment.NewLine }";
+                                            }
                                     }
                                     changed = true;
                                     counters.videos_response = (JObject)videosresponse;
@@ -474,7 +504,10 @@ namespace Stalker
                                                         switch ((string)attachment["type"])
                                                         {
                                                             case "photo":
-                                                                { temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }"; }
+                                                                {
+                                                                    if (DownloadFiles.Checked) link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                                    temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                                }
                                                                 break;
                                                             case "video":
                                                                 { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
@@ -486,11 +519,13 @@ namespace Stalker
                                                                 { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
                                                                 break;
                                                             case "doc":
-                                                                { temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }"; }
+                                                                {
+                                                                    if (DownloadFiles.Checked) link = (string)attachment["doc"]["url"];
+                                                                    temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                                }
                                                                 break;
                                                         }
                                             }
-                                            
                                     }
                                     else
                                     {
@@ -507,7 +542,10 @@ namespace Stalker
                                                         switch ((string)attachment["type"])
                                                         {
                                                             case "photo":
-                                                                { temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }"; }
+                                                                {
+                                                                    if (DownloadFiles.Checked) link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                                    temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }"; 
+                                                                }
                                                                 break;
                                                             case "video":
                                                                 { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
@@ -519,7 +557,10 @@ namespace Stalker
                                                                 { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
                                                                 break;
                                                             case "doc":
-                                                                { temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }"; }
+                                                                {
+                                                                    if (DownloadFiles.Checked) link = (string)attachment["doc"]["url"];
+                                                                    temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                                }
                                                                 break;
                                                         }
                                             }
@@ -556,11 +597,13 @@ namespace Stalker
                                                 {
                                                     case "photo":
                                                         {
+                                                            if (DownloadFiles.Checked) link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
                                                             temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
                                                         } 
                                                         break;
                                                     case "video":
                                                         {
+                                                            if (DownloadFiles.Checked) link = (string)story["video"]["player"];
                                                             temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
                                                         } 
                                                         break;
@@ -573,19 +616,23 @@ namespace Stalker
                                         foreach (var story in storiesresponse["stories"]) NewStories.Add((string)story["id"]);
                                         foreach (var story in counters.stories_response["stories"])
                                             if (!NewStories.Contains((string)story["id"]))
+                                            {
                                                 switch ((string)story["type"])
                                                 {
                                                     case "photo":
                                                         {
+                                                            if (DownloadFiles.Checked) link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
                                                             temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
                                                         }
                                                         break;
                                                     case "video":
                                                         {
+                                                            if (DownloadFiles.Checked) link = (string)story["video"]["player"];
                                                             temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
                                                         }
                                                         break;
                                                 }
+                                            }    
                                     }
                                     changed = true;
                                     counters.stories_response = (JObject)storiesresponse;
@@ -809,6 +856,7 @@ namespace Stalker
                 new KeyValuePair<string, string>("Autostart", Autostart.Checked.ToString()),
                 new KeyValuePair<string, string>("CustomAppIdToggle", CustomAppIdToggle.Checked.ToString()),
                 new KeyValuePair<string, string>("CustomAppId", CustomAppId.Text),
+                new KeyValuePair<string, string>("DownloadFiles", DownloadFiles.Checked.ToString()),
             };
             return settingslist;
         }
@@ -834,6 +882,7 @@ namespace Stalker
             CheckClips.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClipsFollowers"]);
             OpenSettings.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["OpenSettings"]);
             SaveToken.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["SaveToken"]);
+            DownloadFiles.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["DownloadFiles"]);
             CustomAppIdToggle.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["CustomAppIdToggle"]);
             CustomAppId.Text = ConfigurationManager.AppSettings["CustomAppId"];
             if (SaveToken.Checked) AuthToken = ConfigurationManager.AppSettings["AuthToken"];
