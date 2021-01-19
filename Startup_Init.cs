@@ -11,7 +11,7 @@ namespace Stalker
         [STAThread]
         static void Main()
         {
-            /*GuidAttribute attribute = (GuidAttribute)typeof(Stratup_Init).Assembly.GetCustomAttributes(typeof(GuidAttribute), true)[0];
+            GuidAttribute attribute = (GuidAttribute)typeof(Stratup_Init).Assembly.GetCustomAttributes(typeof(GuidAttribute), true)[0];
             using (Mutex mutex = new Mutex(false, @"Global\" + attribute.Value))
             {
                 if (!mutex.WaitOne(0, false))
@@ -25,11 +25,6 @@ namespace Stalker
                 Stalker MainFormInstance = new Stalker();
                 Application.Run(MainFormInstance);
            }
-            */
-            Application.EnableVisualStyles();
-            Application.SetCompatibleTextRenderingDefault(false);
-            Stalker MainFormInstance = new Stalker();
-            Application.Run(MainFormInstance);
         }
     }
 }

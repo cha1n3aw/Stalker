@@ -29,9 +29,7 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(MetroAuthForm));
-#pragma warning disable CS0618 // Type or member is obsolete
             this.ChrBrowser = new CefSharp.WinForms.ChromiumWebBrowser();
-#pragma warning restore CS0618 // Type or member is obsolete
             this.SuspendLayout();
             // 
             // ChrBrowser
@@ -42,6 +40,7 @@
             this.ChrBrowser.Name = "ChrBrowser";
             this.ChrBrowser.Size = new System.Drawing.Size(617, 265);
             this.ChrBrowser.TabIndex = 0;
+            this.ChrBrowser.FrameLoadEnd += new System.EventHandler<CefSharp.FrameLoadEndEventArgs>(this.ChrBrowser_FrameLoadEnd);
             this.ChrBrowser.AddressChanged += new System.EventHandler<CefSharp.AddressChangedEventArgs>(this.ChrBrowser_AddressChanged);
             // 
             // MetroAuthForm

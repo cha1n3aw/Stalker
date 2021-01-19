@@ -23,7 +23,7 @@ namespace Stalker
         private List<string> FriendsIdList = new List<string>();
         private List<string> CustomIdList = new List<string>();
         private int user_id = 0;
-        private readonly int WindowHeight = 504;
+        private readonly int WindowHeight = 528;
         string OnlineDateTime = string.Empty;
         Thread Stalking;
         System.Timers.Timer timer;
@@ -74,14 +74,11 @@ namespace Stalker
             }; 
             timer.Enabled = true;
             Counters counters = new Counters();
-            bool continuous = false;
             RestrictToggles(false);
             while (StartStop.Checked)
             {
                 string temp_text = string.Empty;
                 bool changed = false;
-                string onlineappid = string.Empty;
-                string newplatform = string.Empty;
                 try
                 {
                     Get($"{ApiRequestLink}users.get?user_ids={user_id}&fields=online,counters,last_seen,activity&access_token={AuthToken}&v={ApiVersion}");
@@ -118,9 +115,10 @@ namespace Stalker
                             LastOnlineLabel.Text = $"{OnlineTime}"; 
                             counters.LastOnline = OnlineTime;
                         });
+
                     if (CheckOnlineDevice.Checked)
                     {
-                        if (decoded["last_seen"]["platform"] != null) //Checks for last platform seen, possible values 1-8
+                        if (decoded["last_seen"]["platform"] != null)
                         {
                             switch ((string)decoded["last_seen"]["platform"])
                             {
@@ -152,9 +150,9 @@ namespace Stalker
                                     { decoded["last_seen"]["platform"] = "Unknown"; }
                                     break;
                             }
-                            if (counters.decoded["online_app"] != null && (string)counters.decoded["last_seen"]["platform"] != (string)decoded["last_seen"]["platform"])
+                            if (counters.decoded["last_seen"]["platform"] != null && decoded["last_seen"]["platform"] != null && (string)counters.decoded["last_seen"]["platform"] != (string)decoded["last_seen"]["platform"])
                             {
-                                temp_text += $"{ OnlineTime }, User switched from { counters.decoded["platform"] }  to { decoded["last_seen"]["platform"] }{ Environment.NewLine }";
+                                temp_text += $"{ OnlineTime }, User switched from { counters.decoded["last_seen"]["platform"] }  to { decoded["last_seen"]["platform"] }{ Environment.NewLine }";
                                 changed = true;
                             }
                         }
@@ -184,7 +182,7 @@ namespace Stalker
                                     { decoded["online_app"] = (string)decoded["online_app"]; }
                                     break;
                             }
-                            if (counters.decoded["online_app"] != null && (string)counters.decoded["online_app"] != (string)decoded["online_app"])
+                            if (counters.decoded["online_app"] != null && decoded["online_app"] != null && (string)counters.decoded["online_app"] != (string)decoded["online_app"])
                             {
                                 temp_text += $"{ OnlineTime }, User switched to another app: from { counters.decoded["online_app"] }  to { decoded["online_app"] }{ Environment.NewLine }";
                                 changed = true;
@@ -195,8 +193,37 @@ namespace Stalker
                     {
                         if (CheckAlbums.Checked && decoded["counters"]["albums"] != null && counters.decoded["counters"]["albums"] != null && (int)counters.decoded["counters"]["albums"] != (int)decoded["counters"]["albums"])
                         {
-                            temp_text += $"{ CurrentTime }, Update in albums: { counters.decoded["counters"]["albums"] }  to { decoded["counters"]["albums"] }{ Environment.NewLine }";
-                            changed = true;
+                            try
+                            {
+                                Thread.Sleep(350);
+                                Get($"{ApiRequestLink}photos.getAlbums?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                JObject albums = JObject.Parse(server_response);
+                                var albumsresponse = albums["response"];
+                                if (counters.albums_response == null) counters.albums_response = (JObject)albumsresponse;
+                                else
+                                {
+                                    temp_text += $"{ CurrentTime }, Update in albums: { counters.decoded["counters"]["albums"] }  to { decoded["counters"]["albums"] }{ Environment.NewLine }";
+                                    if ((int)counters.decoded["counters"]["albums"] < (int)decoded["counters"]["albums"])
+                                    {
+                                        List<string> OldAlbums = new List<string>();
+                                        foreach (var album in counters.albums_response["items"]) OldAlbums.Add((string)album["id"]);
+                                        foreach (var album in albumsresponse["items"])
+                                            if (!OldAlbums.Contains((string)album["id"]))
+                                                temp_text += $"   New album:{ Environment.NewLine }   Link: vk.com/album{user_id}_{album["id"]}{ Environment.NewLine }   Title: {album["title"]}";
+                                    }
+                                    else
+                                    {
+                                        List<string> NewAlbums = new List<string>();
+                                        foreach (var album in albumsresponse["items"]) NewAlbums.Add((string)album["id"]);
+                                        foreach (var album in counters.albums_response["items"])
+                                            if (!NewAlbums.Contains((string)album["id"]))
+                                                temp_text += $"   Removed album:{ Environment.NewLine }   Link (unavailaible): vk.com/album{user_id}_{album["id"]}{ Environment.NewLine }   Title: {album["title"]}";
+                                    }
+                                    changed = true;
+                                    counters.albums_response = (JObject)albumsresponse;
+                                }
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at albums check, {e.Message}{Environment.NewLine}"); }
                         }
 
                         if (CheckAudios.Checked && decoded["counters"]["audios"] != null && counters.decoded["counters"]["audios"] != null && (int)counters.decoded["counters"]["audios"] != (int)decoded["counters"]["audios"])
@@ -207,8 +234,37 @@ namespace Stalker
 
                         if (CheckSubscriptions.Checked && decoded["counters"]["subscriptions"] != null && counters.decoded["counters"]["subscriptions"] != null && (int)counters.decoded["counters"]["subscriptions"] != (int)decoded["counters"]["subscriptions"])
                         {
-                            temp_text += $"{ CurrentTime }, Update in subscpritions: { counters.decoded["counters"]["subscriptions"] }  to { decoded["counters"]["subscriptions"] }{ Environment.NewLine }";
-                            changed = true;
+                            try
+                            {
+                                Thread.Sleep(350);
+                                Get($"{ApiRequestLink}users.getSubscriptions?user_id={user_id}&extended=1&access_token={AuthToken}&v={ApiVersion}");
+                                JObject subscriptions = JObject.Parse(server_response);
+                                var subscriptionsresponse = subscriptions["response"];
+                                if (counters.subscriptions_response == null) counters.subscriptions_response = (JObject)subscriptionsresponse;
+                                else
+                                {
+                                    temp_text += $"{ CurrentTime }, Update in subscpritions: { counters.decoded["counters"]["subscriptions"] }  to { decoded["counters"]["subscriptions"] }{ Environment.NewLine }";
+                                    if ((int)counters.decoded["counters"]["subscriptions"] < (int)decoded["counters"]["subscriptions"])
+                                    {
+                                        List<string> OldSubscriptions = new List<string>();
+                                        foreach (var subscription in counters.subscriptions_response["items"]) OldSubscriptions.Add((string)subscription["id"]);
+                                        foreach (var subscription in subscriptionsresponse["items"])
+                                            if (!OldSubscriptions.Contains((string)subscription["id"]))
+                                                temp_text += $"   New subsription:{ Environment.NewLine }   Link: vk.com/public{subscription["id"]}{ Environment.NewLine }   Name: {subscription["name"]}";
+                                    }
+                                    else
+                                    {
+                                        List<string> NewSubscriptions = new List<string>();
+                                        foreach (var subscription in subscriptionsresponse["items"]) NewSubscriptions.Add((string)subscription["id"]);
+                                        foreach (var subscription in counters.subscriptions_response["items"])
+                                            if (!NewSubscriptions.Contains((string)subscription["id"]))
+                                                temp_text += $"   Removed subsription:{ Environment.NewLine }   Link: vk.com/public{subscription["id"]}{ Environment.NewLine }   Name: {subscription["name"]}";
+                                    }
+                                    changed = true;
+                                    counters.subscriptions_response = (JObject)subscriptionsresponse;
+                                }
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at albums check, {e.Message}{Environment.NewLine}"); }
                         }
 
                         if (CheckClips.Checked && decoded["counters"]["clips_followers"] != null && counters.decoded["counters"]["clips_followers"] != null && (int)counters.decoded["counters"]["clips_followers"] != (int)decoded["counters"]["clips_followers"])
@@ -284,7 +340,6 @@ namespace Stalker
                                     counters.gifts_response = (JObject)giftsresponse;
                                 }
                             } catch (Exception e) { WriteToFile($"Exception thrown at gifts check, {e.Message}{Environment.NewLine}"); }
-                        
                         }
                     
                         if (CheckVideos.Checked && decoded["counters"]["videos"] != null && counters.decoded["counters"]["videos"] != null && (int)counters.decoded["counters"]["videos"] != (int)decoded["counters"]["videos"])
@@ -363,7 +418,7 @@ namespace Stalker
                         {
                             try
                             {
-                                Thread.Sleep(350); //timeout on api requests
+                                Thread.Sleep(350);
                                 Get($"{ApiRequestLink}users.getFollowers?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
                                 JObject followers = JObject.Parse(server_response);
                                 var followersresponse = followers["response"];
@@ -392,12 +447,12 @@ namespace Stalker
                                 counters.followers_response = (JObject)followersresponse;
                             } catch (Exception e) { WriteToFile($"Exception thrown at followers check{Environment.NewLine}{e.Message}"); }
                         }
-                        if (CheckPosts.Checked && timeout) //depends on private profile
+                        if (CheckPosts.Checked && timeout)
                         {
                             try
                             {
-                                Thread.Sleep(350); //timeout on api requests
-                                Get($"{ApiRequestLink}wall.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}"); //get wall posts
+                                Thread.Sleep(350);
+                                Get($"{ApiRequestLink}wall.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
                                 JObject posts = JObject.Parse(server_response);
                                 var postsresponse = posts["response"];
                                 if (counters.posts_response == null) counters.posts_response = (JObject)postsresponse;
@@ -477,6 +532,69 @@ namespace Stalker
                             }
                             catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); CheckPosts.Checked = false; }
                         }
+                        if (CheckStories.Checked && timeout)
+                        {
+                            try
+                            {
+                                Thread.Sleep(350);
+                                Get($"{ApiRequestLink}stories.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                WriteToFile(server_response);
+                                JObject stories = JObject.Parse(server_response);
+                                var storiesresponse = stories["response"]["items"][0];
+                                if (counters.stories_response == null) counters.stories_response = (JObject)storiesresponse;
+                                else if (counters.stories_response["stories"].Count() != storiesresponse["stories"].Count())
+                                {
+                                    temp_text += $"{ CurrentTime }, Update in stories: { counters.stories_response["stories"].Count() }  to { storiesresponse["stories"].Count() }{ Environment.NewLine }";
+                                    if (counters.stories_response["stories"].Count() < storiesresponse["stories"].Count())
+                                    {
+                                        List<string> OldStories = new List<string>();
+                                        foreach (var story in counters.stories_response["stories"]) OldStories.Add((string)story["id"]);
+                                        foreach (var story in storiesresponse["stories"])
+                                            if (!OldStories.Contains((string)story["id"]))
+                                            {
+                                                switch ((string)story["type"])
+                                                {
+                                                    case "photo":
+                                                        {
+                                                            temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                        } 
+                                                        break;
+                                                    case "video":
+                                                        {
+                                                            temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
+                                                        } 
+                                                        break;
+                                                }
+                                            }
+                                    }
+                                    else
+                                    {
+                                        List<string> NewStories = new List<string>();
+                                        foreach (var story in storiesresponse["stories"]) NewStories.Add((string)story["id"]);
+                                        foreach (var story in counters.stories_response["stories"])
+                                            if (!NewStories.Contains((string)story["id"]))
+                                                switch ((string)story["type"])
+                                                {
+                                                    case "photo":
+                                                        {
+                                                            temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                        }
+                                                        break;
+                                                    case "video":
+                                                        {
+                                                            temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
+                                                        }
+                                                        break;
+                                                }
+                                    }
+                                    changed = true;
+                                    counters.stories_response = (JObject)storiesresponse;
+                                }
+                                timeout = false;
+                                timer.Start();
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at stories check, {e.Message}{Environment.NewLine}"); }
+                        }
                     }
                 
                     if (CheckPages.Checked && decoded["counters"]["pages"] != null && (int)counters.decoded["counters"]["pages"] != (int)decoded["counters"]["pages"]) //checks independently from private profile, but only in offline-online online-online online-offline modes
@@ -502,8 +620,8 @@ namespace Stalker
                     {
                         if (!(bool)counters.decoded["online"] && (bool)decoded["online"]) //if changes were committed or offline to online transition happened
                             if (CheckOnlineDevice.Checked)
-                                if (onlineappid != string.Empty && newplatform != string.Empty) WriteToFile($"Online {newplatform}, {onlineappid}: { OnlineDateTime }   —");
-                                else WriteToFile($"Online {newplatform}: { OnlineDateTime }   —");
+                                if (decoded["online_app"] != null && decoded["last_seen"]["platform"] != null) WriteToFile($"Online {decoded["last_seen"]["platform"]}, {decoded["online_app"]}: { OnlineDateTime }   —");
+                                else WriteToFile($"Online {decoded["last_seen"]["platform"]}: { OnlineDateTime }   —");
                             else WriteToFile($"Online: { OnlineDateTime }   —");
                         else WriteToFile($"  { OnlineDateTime }{ Environment.NewLine }"); //if transition online to offline happened
                     }
@@ -681,6 +799,7 @@ namespace Stalker
                 new KeyValuePair<string, string>("Photos", CheckPhotos.Checked.ToString()),
                 new KeyValuePair<string, string>("Posts", CheckPosts.Checked.ToString()),
                 new KeyValuePair<string, string>("Status", CheckStatus.Checked.ToString()),
+                new KeyValuePair<string, string>("Stories", CheckStories.Checked.ToString()),
                 new KeyValuePair<string, string>("Subscriptions", CheckSubscriptions.Checked.ToString()),
                 new KeyValuePair<string, string>("Videos", CheckVideos.Checked.ToString()),
                 new KeyValuePair<string, string>("ClipsFollowers", CheckClips.Checked.ToString()),
@@ -709,6 +828,7 @@ namespace Stalker
             CheckPhotos.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Photos"]);
             CheckPosts.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Posts"]);
             CheckStatus.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Status"]);
+            CheckStories.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Stories"]);
             CheckSubscriptions.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Subscriptions"]);
             CheckVideos.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Videos"]);
             CheckClips.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClipsFollowers"]);
@@ -741,6 +861,9 @@ namespace Stalker
         public JObject friends_response = null;
         public JObject followers_response = null;
         public JObject posts_response = null;
+        public JObject albums_response = null;
+        public JObject subscriptions_response = null;
+        public JObject stories_response = null;
         public string LastOnline = string.Empty;
     }
 }

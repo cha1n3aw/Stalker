@@ -12,7 +12,7 @@ namespace Stalker
     {
         private string RedirectUri = "https://oauth.vk.com/blank.html";
         private string AuthUri = "https://oauth.vk.com/authorize?";
-        internal int APPid = 2685278; //7482854 fox 2685278 kate mobile
+        internal int APPid = 2685278; //7482854 fox 2685278 kate mobile2274003
         private string APIversion = "5.126";
         internal bool ClearCookies = false;
         public string Token { get; private set; }
@@ -43,6 +43,11 @@ namespace Stalker
                 if (ClearCookies) Cef.GetGlobalCookieManager().DeleteCookies("", "");
             }
             catch (Exception) { DialogResult = DialogResult.No; }
+        }
+
+        private void ChrBrowser_FrameLoadEnd(object sender, FrameLoadEndEventArgs e)
+        {
+            if (ChrBrowser.IsBrowserInitialized) ChrBrowser.ExecuteScriptAsyncWhenPageLoaded(" if (document.querySelector('input.textfield') === null) { document.querySelector('input.button').click(); }");
         }
     }
 }
