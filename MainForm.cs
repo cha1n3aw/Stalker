@@ -26,6 +26,8 @@ namespace Stalker
         private int user_id = 0;
         private readonly int WindowHeight = 549;
         string OnlineDateTime = string.Empty;
+        string OnlineTime = string.Empty;
+        string CurrentTime = string.Empty;
         Thread Stalking;
         System.Timers.Timer timer;
         private string _link;
@@ -35,7 +37,7 @@ namespace Stalker
             { 
                 if (!Directory.Exists(Application.StartupPath + "\\Files"))
                     Directory.CreateDirectory(Application.StartupPath + "\\Files");
-                string directory = $"{Application.StartupPath}\\Files\\{Regex.Match(value, @"(?:[^/][\d\w\.]+)(?<=(?:.jpg)|(?:.mp4)|(?:.jpeg)|(?:.png)|(?:.pdf)|(?:.gif)|(?:.doc))").Value}";
+                string directory = $"{Application.StartupPath}\\Files\\id{user_id}-{Regex.Match(value, @"(?:[^/][\d\w\.]+)(?<=(?:.jpg)|(?:.mp4)|(?:.jpeg)|(?:.png)|(?:.pdf)|(?:.gif)|(?:.doc))").Value}";
                 if (!File.Exists(directory))
                 using (WebClient wc = new WebClient())
                         wc.DownloadFileAsync(new Uri(value), directory);
@@ -96,7 +98,7 @@ namespace Stalker
                 bool changed = false;
                 try
                 {
-                    Get($"{ApiRequestLink}users.get?user_ids={user_id}&fields=online,counters,last_seen,activity&access_token={AuthToken}&v={ApiVersion}");
+                    Get($"{ApiRequestLink}users.get?user_ids={user_id}&fields=online,counters,last_seen,status&access_token={AuthToken}&v={ApiVersion}");
                     JObject decodedresponse = JObject.Parse(server_response);
                     var decoded = decodedresponse["response"][0];
                     if (counters.decoded == null)
@@ -111,6 +113,7 @@ namespace Stalker
                         counters.decoded["counters"]["albums"] = -1;
                         counters.decoded["counters"]["subscriptions"] = -1;
                         counters.decoded["is_closed"] = false;
+                        if (counters.decoded["status_audio"] != null) counters.decoded.Remove("status_audio");
                     }
 
                     if ((bool)counters.decoded["is_closed"] != (bool)decoded["is_closed"]) //Check for private profile, if so - then restrict unavailaible toggles
@@ -122,16 +125,16 @@ namespace Stalker
                         }
                         else RestrictToggles(false);
                     }
-
-                    string CurrentTime = DateTime.Now.ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
-                    OnlineDateTime = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded["last_seen"]["time"]).ToString("dd MMM yyyy, HH:mm:ss", DateTimeFormatInfo.InvariantInfo); //Get last seen time in string format
-                    string OnlineTime  = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded["last_seen"]["time"]).ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
-                    if (OnlineTime != counters.LastOnline)
-                        LastOnlineLabel.Invoke((MethodInvoker)delegate
-                        {
-                            LastOnlineLabel.Text = $"{OnlineTime}"; 
-                            counters.LastOnline = OnlineTime;
-                        });
+                    DateTime LastOnlineTime = new DateTime(1970, 1, 1, 5, 0, 0, 0).AddSeconds((double)decoded["last_seen"]["time"]);
+                    OnlineDateTime = LastOnlineTime.ToString("dd MMM yyyy, HH:mm:ss", DateTimeFormatInfo.InvariantInfo); //Get last seen time in string format
+                    OnlineTime = LastOnlineTime.ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
+                    CurrentTime = DateTime.Now.ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
+                    
+                    LastOnlineLabel.Invoke((MethodInvoker)delegate
+                    {
+                        if (counters.LastOnlineTime != LastOnlineTime) LastOnlineLabel.Text = $"{OnlineTime}";
+                        counters.LastOnlineTime = LastOnlineTime;
+                    });
 
                     if (CheckOnlineDevice.Checked)
                     {
@@ -281,7 +284,7 @@ namespace Stalker
                                     counters.subscriptions_response = (JObject)subscriptionsresponse;
                                 }
                             }
-                            catch (Exception e) { WriteToFile($"Exception thrown at albums check, {e.Message}{Environment.NewLine}"); }
+                            catch (Exception e) { WriteToFile($"Exception thrown at subscriptions check, {e.Message}{Environment.NewLine}"); }
                         }
 
                         if (CheckClips.Checked && decoded["counters"]["clips_followers"] != null && counters.decoded["counters"]["clips_followers"] != null && (int)counters.decoded["counters"]["clips_followers"] != (int)decoded["counters"]["clips_followers"])
@@ -448,7 +451,7 @@ namespace Stalker
                                 }
                                 changed = true;
                                 counters.friends_response = (JObject)friendsresponse;
-                            } catch (Exception e) { WriteToFile($"Exception thrown at friends check{Environment.NewLine}{e.Message}"); }
+                            } catch (Exception e) { WriteToFile($"Exception thrown at friends check, {e.Message}{Environment.NewLine}"); }
                         }
 
                         if (CheckFollowers.Checked && decoded["counters"]["followers"] != null && counters.decoded["counters"]["followers"] != null && (int)counters.decoded["counters"]["followers"] != (int)decoded["counters"]["followers"]) //checks in all modes including offline-offline, but depends on private profile
@@ -482,7 +485,7 @@ namespace Stalker
                                 }
                                 changed = true;
                                 counters.followers_response = (JObject)followersresponse;
-                            } catch (Exception e) { WriteToFile($"Exception thrown at followers check{Environment.NewLine}{e.Message}"); }
+                            } catch (Exception e) { WriteToFile($"Exception thrown at followers check, {e.Message}{Environment.NewLine}"); }
                         }
                         if (CheckPosts.Checked && timeout)
                         {
@@ -687,10 +690,36 @@ namespace Stalker
                         temp_text += $"{ CurrentTime }, Update in pages: { counters.decoded["counters"]["pages"] }  to { decoded["counters"]["pages"] }{ Environment.NewLine }";
                         changed = true;
                     }
-                    if (CheckStatus.Checked && decoded["activity"] != null && counters.decoded["activity"] != null && (string)counters.decoded["activity"] != (string)decoded["activity"]) //checks independently from private profile, but only in offline-online online-online online-offline modes
+
+                    if (CheckStatus.Checked) //checks independently from private profile, but only in offline-online online-online online-offline modes
                     {
-                        temp_text += $"{ CurrentTime }, Update in status: old '{ counters.decoded["activity"] }', new '{ decoded["activity"] }'{ Environment.NewLine }";
-                        changed = true;
+                        try
+                        {
+                            if (decoded["status"] != null && counters.decoded["status"] != null && (string)counters.decoded["status"] != (string)decoded["status"])
+                            {
+                                temp_text += $"{ CurrentTime }, Update in status: old '{ counters.decoded["status"] }', new '{ decoded["status"] }'{ Environment.NewLine }";
+                                changed = true;
+                            }
+                            if (counters.decoded["status_audio"] != null)
+                            {
+                                if (decoded["status_audio"] == null)
+                                {
+                                    temp_text += $"{ CurrentTime }, Stopped listening to music{ Environment.NewLine }";
+                                    changed = true;
+                                }
+                                else if ((string)counters.decoded["status_audio"]["id"] != (string)decoded["status_audio"]["id"])
+                                {
+                                    temp_text += $"{ CurrentTime }, New track: { decoded["status_audio"]["artist"] } - { decoded["status_audio"]["title"] }{ Environment.NewLine }";
+                                    changed = true;
+                                }
+                            }
+                            else if (decoded["status_audio"] != null)
+                            { 
+                                temp_text += $"{ CurrentTime }, Started listening to music: { decoded["status_audio"]["artist"] } - { decoded["status_audio"]["title"] }{ Environment.NewLine }";
+                                changed = true;
+                            }
+                        }
+                        catch (Exception e) { WriteToFile($"Exception thrown at status check, {e.Message}{Environment.NewLine}"); }
                     }
 
                     if (changed) EventLogs.Invoke((MethodInvoker)delegate
@@ -711,7 +740,7 @@ namespace Stalker
                         else WriteToFile($"  { OnlineDateTime }{ Environment.NewLine }"); //if transition online to offline happened
                     }
                     counters.decoded = (JObject)decoded;
-                } catch (Exception e) { WriteToFile($"Global error, possibly get counters failed{Environment.NewLine}{e.Message}"); }
+                } catch (Exception e) { WriteToFile($"Global error, possibly get counters failed, {e.Message}{Environment.NewLine}"); }
                 Thread.Sleep(350);
             }
         }
@@ -951,7 +980,7 @@ namespace Stalker
         public JObject albums_response = null;
         public JObject subscriptions_response = null;
         public JObject stories_response = null;
-        public string LastOnline = string.Empty;
+        public DateTime LastOnlineTime = DateTime.Now;
     }
 }
 
