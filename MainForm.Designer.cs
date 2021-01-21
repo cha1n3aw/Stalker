@@ -229,7 +229,6 @@
             this.PreventSleep.Text = "On";
             this.PreventSleep.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.PreventSleep.UseSelectable = true;
-            this.PreventSleep.CheckedChanged += new System.EventHandler(this.PreventSleep_CheckedChanged);
             // 
             // metroLabel2
             // 

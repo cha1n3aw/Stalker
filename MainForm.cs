@@ -78,7 +78,8 @@ namespace Stalker
         }
         private void Poll()
         {
-            bool timeout = true;
+            bool posts_timeout = true;
+            bool stories_timeout = true;
             timer = new System.Timers.Timer
             {
                 Interval = 17300,
@@ -86,14 +87,15 @@ namespace Stalker
             };
             timer.Elapsed += (sender, data) =>
             {
-                timeout = true;
-                timer.Stop();
+                posts_timeout = true;
+                stories_timeout = true;
             }; 
             timer.Enabled = true;
             Counters counters = new Counters();
             RestrictToggles(false);
             while (StartStop.Checked)
             {
+                if (PreventSleep.Checked) DLLIMPORTS.SetThreadExecutionState(DLLIMPORTS.EXECUTION_STATE.ES_CONTINUOUS | DLLIMPORTS.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
                 string temp_text = string.Empty;
                 bool changed = false;
                 try
@@ -424,7 +426,7 @@ namespace Stalker
                         {
                             try
                             {
-                                Thread.Sleep(350); //timeout on api requests
+                                Thread.Sleep(350);
                                 Get($"{ApiRequestLink}friends.get?user_id={user_id}&fields=name&access_token={AuthToken}&v={ApiVersion}");
                                 JObject friends = JObject.Parse(server_response);
                                 var friendsresponse = friends["response"];
@@ -454,12 +456,12 @@ namespace Stalker
                             } catch (Exception e) { WriteToFile($"Exception thrown at friends check, {e.Message}{Environment.NewLine}"); }
                         }
 
-                        if (CheckFollowers.Checked && decoded["counters"]["followers"] != null && counters.decoded["counters"]["followers"] != null && (int)counters.decoded["counters"]["followers"] != (int)decoded["counters"]["followers"]) //checks in all modes including offline-offline, but depends on private profile
+                        if (CheckFollowers.Checked && decoded["counters"]["followers"] != null && counters.decoded["counters"]["followers"] != null && (int)counters.decoded["counters"]["followers"] != (int)decoded["counters"]["followers"])
                         {
                             try
                             {
                                 Thread.Sleep(350);
-                                Get($"{ApiRequestLink}users.getFollowers?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                Get($"{ApiRequestLink}users.getFollowers?user_id={user_id}&fields=online&access_token={AuthToken}&v={ApiVersion}");
                                 JObject followers = JObject.Parse(server_response);
                                 var followersresponse = followers["response"];
                                 if (counters.followers_response == null) counters.followers_response = (JObject)followersresponse;
@@ -487,7 +489,7 @@ namespace Stalker
                                 counters.followers_response = (JObject)followersresponse;
                             } catch (Exception e) { WriteToFile($"Exception thrown at followers check, {e.Message}{Environment.NewLine}"); }
                         }
-                        if (CheckPosts.Checked && timeout)
+                        if (CheckPosts.Checked && posts_timeout)
                         {
                             try
                             {
@@ -552,7 +554,7 @@ namespace Stalker
                                         foreach (var post in counters.posts_response["items"])
                                             if (!NewPosts.Contains((string)post["id"]))
                                             {
-                                                temp_text += $"   New post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
+                                                temp_text += $"   Removed post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
                                                 if (post["text"] != null && (string)post["text"] != "")
                                                     temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
                                                 if (post["attachments"] != null)
@@ -594,104 +596,165 @@ namespace Stalker
                                     changed = true;
                                     counters.posts_response = (JObject)postsresponse;
                                 }
-                                timeout = false;
-                                timer.Start();
+                                posts_timeout = false;
                             }
                             catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); BeginInvoke(new MethodInvoker(delegate { CheckPosts.Checked = false; }));  }
                         }
-                        if (CheckStories.Checked && timeout)
+                        if (CheckStories.Checked && stories_timeout)
                         {
                             try
                             {
                                 Thread.Sleep(350);
                                 Get($"{ApiRequestLink}stories.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
                                 JObject stories = JObject.Parse(server_response);
-                                var storiesresponse = stories["response"]["items"][0];
+                                var storiesresponse = stories["response"];
                                 if (counters.stories_response == null) counters.stories_response = (JObject)storiesresponse;
-                                else if (counters.stories_response["stories"].Count() != storiesresponse["stories"].Count())
+                                else
                                 {
-                                    temp_text += $"{ CurrentTime }, Update in stories: { counters.stories_response["stories"].Count() }  to { storiesresponse["stories"].Count() }{ Environment.NewLine }";
-                                    if (counters.stories_response["stories"].Count() < storiesresponse["stories"].Count())
-                                    {
-                                        List<string> OldStories = new List<string>();
-                                        foreach (var story in counters.stories_response["stories"]) OldStories.Add((string)story["id"]);
-                                        foreach (var story in storiesresponse["stories"])
-                                            if (!OldStories.Contains((string)story["id"]))
+                                    if ((int)counters.stories_response["count"] > 0 && (int)storiesresponse["count"] > 0)
+                                        if (counters.stories_response["items"][0]["stories"].Count() != storiesresponse["items"][0]["stories"].Count())
+                                        {
+                                            temp_text += $"{ CurrentTime }, Update in stories: { counters.stories_response["items"][0]["stories"].Count() }  to { storiesresponse["items"][0]["stories"].Count() }{ Environment.NewLine }";
+                                            if (counters.stories_response["items"][0]["stories"].Count() < storiesresponse["items"][0]["stories"].Count())
                                             {
-                                                switch ((string)story["type"])
-                                                {
-                                                    case "photo":
+                                                List<string> OldStories = new List<string>();
+                                                foreach (var story in counters.stories_response["items"][0]["stories"]) OldStories.Add((string)story["id"]);
+                                                foreach (var story in storiesresponse["items"][0]["stories"])
+                                                    if (!OldStories.Contains((string)story["id"]))
+                                                    {
+                                                        switch ((string)story["type"])
                                                         {
-                                                            temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
-                                                            if (DownloadFiles.Checked)
-                                                            {
-                                                                link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
-                                                                temp_text += $"{_link}{Environment.NewLine}";
-                                                            }
-                                                        } 
-                                                        break;
-                                                    case "video":
-                                                        {
-                                                            temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
-                                                            if (DownloadFiles.Checked)
-                                                            {
-                                                                link = (string)story["video"]["player"];
-                                                                temp_text += $"{_link}{Environment.NewLine}";
-                                                            }
-                                                        } 
-                                                        break;
-                                                }
+                                                            case "photo":
+                                                                {
+                                                                    temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
+                                                                }
+                                                                break;
+                                                            case "video":
+                                                                {
+                                                                    temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)story["video"]["player"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
+                                                                }
+                                                                break;
+                                                        }
+                                                    }
                                             }
-                                    }
-                                    else
-                                    {
-                                        List<string> NewStories = new List<string>();
-                                        foreach (var story in storiesresponse["stories"]) NewStories.Add((string)story["id"]);
-                                        foreach (var story in counters.stories_response["stories"])
-                                            if (!NewStories.Contains((string)story["id"]))
+                                            else
                                             {
-                                                switch ((string)story["type"])
-                                                {
-                                                    case "photo":
+                                                List<string> NewStories = new List<string>();
+                                                foreach (var story in storiesresponse["items"][0]["stories"]) NewStories.Add((string)story["id"]);
+                                                foreach (var story in counters.stories_response["items"][0]["stories"])
+                                                    if (!NewStories.Contains((string)story["id"]))
+                                                    {
+                                                        switch ((string)story["type"])
                                                         {
-                                                            temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
-                                                            if (DownloadFiles.Checked)
-                                                            {
-                                                                link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
-                                                                temp_text += $"{_link}{Environment.NewLine}";
-                                                            }
+                                                            case "photo":
+                                                                {
+                                                                    temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
+                                                                }
+                                                                break;
+                                                            case "video":
+                                                                {
+                                                                    temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked)
+                                                                    {
+                                                                        link = (string)story["video"]["player"];
+                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                    }
+                                                                }
+                                                                break;
                                                         }
-                                                        break;
-                                                    case "video":
+                                                    }
+                                            }
+                                            changed = true;
+                                        }
+                                        else { }
+                                    else if ((int)counters.stories_response["count"] == 0 && (int)storiesresponse["count"] == 1)
+                                    {
+                                        temp_text += $"{ CurrentTime }, Update in stories: 0  to { storiesresponse["items"][0]["stories"].Count() }{ Environment.NewLine }";
+                                        foreach (var story in storiesresponse["items"][0]["stories"])
+                                            switch ((string)story["type"])
+                                            {
+                                                case "photo":
+                                                    {
+                                                        temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked)
                                                         {
-                                                            temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
-                                                            if (DownloadFiles.Checked)
-                                                            {
-                                                                link = (string)story["video"]["player"];
-                                                                temp_text += $"{_link}{Environment.NewLine}";
-                                                            }
+                                                            link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
+                                                            temp_text += $"{_link}{Environment.NewLine}";
                                                         }
-                                                        break;
-                                                }
-                                            }    
+                                                    }
+                                                    break;
+                                                case "video":
+                                                    {
+                                                        temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked)
+                                                        {
+                                                            link = (string)story["video"]["player"];
+                                                            temp_text += $"{_link}{Environment.NewLine}";
+                                                        }
+                                                    }
+                                                    break;
+                                            }
+                                        changed = true;
                                     }
-                                    changed = true;
+                                    else if ((int)counters.stories_response["count"] == 1 && (int)storiesresponse["count"] == 0)
+                                    {
+                                        temp_text += $"{ CurrentTime }, Update in stories: { counters.stories_response["items"][0]["stories"].Count() }  to 0{ Environment.NewLine }";
+                                        foreach (var story in counters.stories_response["items"][0]["stories"])
+                                            switch ((string)story["type"])
+                                            {
+                                                case "photo":
+                                                    {
+                                                        temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked)
+                                                        {
+                                                            link = (string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"];
+                                                            temp_text += $"{_link}{Environment.NewLine}";
+                                                        }
+                                                    }
+                                                    break;
+                                                case "video":
+                                                    {
+                                                        temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked)
+                                                        {
+                                                            link = (string)story["video"]["player"];
+                                                            temp_text += $"{_link}{Environment.NewLine}";
+                                                        }
+                                                    }
+                                                    break;
+                                            }
+                                        changed = true;
+                                    }
                                     counters.stories_response = (JObject)storiesresponse;
                                 }
-                                timeout = false;
-                                timer.Start();
+                                stories_timeout = false;
                             }
                             catch (Exception e) { WriteToFile($"Exception thrown at stories check, {e.Message}{Environment.NewLine}"); }
                         }
                     }
                 
-                    if (CheckPages.Checked && decoded["counters"]["pages"] != null && (int)counters.decoded["counters"]["pages"] != (int)decoded["counters"]["pages"]) //checks independently from private profile, but only in offline-online online-online online-offline modes
+                    if (CheckPages.Checked && decoded["counters"]["pages"] != null && (int)counters.decoded["counters"]["pages"] != (int)decoded["counters"]["pages"])
                     {
                         temp_text += $"{ CurrentTime }, Update in pages: { counters.decoded["counters"]["pages"] }  to { decoded["counters"]["pages"] }{ Environment.NewLine }";
                         changed = true;
                     }
 
-                    if (CheckStatus.Checked) //checks independently from private profile, but only in offline-online online-online online-offline modes
+                    if (CheckStatus.Checked)
                     {
                         try
                         {
@@ -843,8 +906,8 @@ namespace Stalker
         {
             StartStopLabel.Text = "Start";
             LastOnlineLabel.Text = "Last Online";
-            if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') 
-                WriteToFile($"  { OnlineDateTime }{ Environment.NewLine }");
+            if (EventLogs.Text[EventLogs.Text.Length - 1] == '—' && Logs.Checked)
+                File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", $"  { OnlineDateTime }{ Environment.NewLine }");
             ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = true;
             RestrictToggles(false);
         }
@@ -852,11 +915,6 @@ namespace Stalker
         {
             if (WindowState == FormWindowState.Minimized) { Show(); WindowState = FormWindowState.Normal; }
             else if (WindowState == FormWindowState.Normal) WindowState = FormWindowState.Minimized;
-        }
-        private void PreventSleep_CheckedChanged(object sender, EventArgs e)
-        {
-            if (PreventSleep.Checked) DLLIMPORTS.SetThreadExecutionState(DLLIMPORTS.EXECUTION_STATE.ES_CONTINUOUS | DLLIMPORTS.EXECUTION_STATE.ES_SYSTEM_REQUIRED);
-            else DLLIMPORTS.SetThreadExecutionState(DLLIMPORTS.EXECUTION_STATE.ES_CONTINUOUS);
         }
         private void OpenSettings_CheckedChanged(object sender, EventArgs e)
         {
