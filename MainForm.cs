@@ -24,12 +24,14 @@ namespace Stalker
         private List<string> FriendsIdList = new List<string>();
         private List<string> CustomIdList = new List<string>();
         private int user_id = 0;
-        private readonly int WindowHeight = 549;
+        private readonly int WindowHeight = 588;
         string OnlineDateTime = string.Empty;
         string OnlineTime = string.Empty;
         string CurrentTime = string.Empty;
         Thread Stalking;
         System.Timers.Timer timer;
+        RegistryKey AutostartOnBoot = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
+
         private string _link;
         private string link
         { 
@@ -82,7 +84,7 @@ namespace Stalker
             bool stories_timeout = true;
             timer = new System.Timers.Timer
             {
-                Interval = 17300,
+                Interval = 17000,
                 AutoReset = true
             };
             timer.Elapsed += (sender, data) =>
@@ -134,8 +136,17 @@ namespace Stalker
                     
                     LastOnlineLabel.Invoke((MethodInvoker)delegate
                     {
-                        if (counters.LastOnlineTime != LastOnlineTime) LastOnlineLabel.Text = $"{OnlineTime}";
-                        counters.LastOnlineTime = LastOnlineTime;
+                        if (counters.LastOnlineTime != LastOnlineTime)
+                        {
+                            LastOnlineLabel.Text = $"{OnlineTime}";
+                            if (DetailedLogs.Checked)
+                            {
+                                if (!Directory.Exists(Application.StartupPath + "\\Logs")) Directory.CreateDirectory(Application.StartupPath + "\\Logs");
+                                if (!File.Exists(Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt")) File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt", $"Detailed online log file for user id{user_id}{Environment.NewLine}");
+                                File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt", $"{OnlineTime}{Environment.NewLine}");
+                            }
+                            counters.LastOnlineTime = LastOnlineTime;
+                        }
                     });
 
                     if (CheckOnlineDevice.Checked)
@@ -494,107 +505,110 @@ namespace Stalker
                             try
                             {
                                 Thread.Sleep(350);
-                                Get($"{ApiRequestLink}wall.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
+                                Get($"{ApiRequestLink}wall.get?owner_id={user_id}&extended=1&access_token={AuthToken}&v={ApiVersion}");
                                 JObject posts = JObject.Parse(server_response);
                                 var postsresponse = posts["response"];
                                 if (counters.posts_response == null) counters.posts_response = (JObject)postsresponse;
-                                else if ((int)counters.posts_response["count"] != (int)postsresponse["count"])
+                                else
                                 {
-                                    temp_text += $"{ CurrentTime }, Update in posts: { counters.posts_response["count"] }  to { postsresponse["count"] }{ Environment.NewLine }";
-                                    if ((int)counters.posts_response["count"] < (int)postsresponse["count"])
+                                    if ((int)counters.posts_response["count"] != (int)postsresponse["count"])
                                     {
-                                        List<string> OldPosts = new List<string>();
-                                        foreach (var post in counters.posts_response["items"]) OldPosts.Add((string)post["id"]);
-                                        foreach (var post in postsresponse["items"])
-                                            if (!OldPosts.Contains((string)post["id"]))
-                                            {
-                                                temp_text += $"   New post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
-                                                if (post["text"] != null && (string)post["text"] != "")
-                                                    temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
-                                                if (post["attachments"] != null)
-                                                    foreach (var attachment in post["attachments"])
-                                                        switch ((string)attachment["type"])
-                                                        {
-                                                            case "photo":
-                                                                {
-                                                                    temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
-                                                                    if (DownloadFiles.Checked)
+                                        temp_text += $"{ CurrentTime }, Update in posts: { counters.posts_response["count"] }  to { postsresponse["count"] }{ Environment.NewLine }";
+                                        if ((int)counters.posts_response["count"] < (int)postsresponse["count"])
+                                        {
+                                            List<string> OldPosts = new List<string>();
+                                            foreach (var post in counters.posts_response["items"]) OldPosts.Add((string)post["id"]);
+                                            foreach (var post in postsresponse["items"])
+                                                if (!OldPosts.Contains((string)post["id"]))
+                                                {
+                                                    temp_text += $"   New post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
+                                                    if (post["text"] != null && (string)post["text"] != "")
+                                                        temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
+                                                    if (post["attachments"] != null)
+                                                        foreach (var attachment in post["attachments"])
+                                                            switch ((string)attachment["type"])
+                                                            {
+                                                                case "photo":
                                                                     {
-                                                                        link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
-                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                        temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                                        if (DownloadFiles.Checked)
+                                                                        {
+                                                                            link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                                            temp_text += $"{_link}{Environment.NewLine}";
+                                                                        }
                                                                     }
-                                                                }
-                                                                break;
-                                                            case "video":
-                                                                { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
-                                                                break;
-                                                            case "audio":
-                                                                { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
-                                                                break;
-                                                            case "link":
-                                                                { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
-                                                                break;
-                                                            case "doc":
-                                                                {
-                                                                    temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
-                                                                    if (DownloadFiles.Checked)
+                                                                    break;
+                                                                case "video":
+                                                                    { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
+                                                                    break;
+                                                                case "audio":
+                                                                    { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
+                                                                    break;
+                                                                case "link":
+                                                                    { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
+                                                                    break;
+                                                                case "doc":
                                                                     {
-                                                                        link = (string)attachment["doc"]["url"];
-                                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                                        temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                                        if (DownloadFiles.Checked)
+                                                                        {
+                                                                            link = (string)attachment["doc"]["url"];
+                                                                            temp_text += $"{_link}{Environment.NewLine}";
+                                                                        }
                                                                     }
-                                                                }
-                                                                break;
-                                                        }
-                                            }
+                                                                    break;
+                                                            }
+                                                }
+                                        }
+                                        else
+                                        {
+                                            List<string> NewPosts = new List<string>();
+                                            foreach (var post in postsresponse["items"]) NewPosts.Add((string)post["id"]);
+                                            foreach (var post in counters.posts_response["items"])
+                                                if (!NewPosts.Contains((string)post["id"]))
+                                                {
+                                                    temp_text += $"   Removed post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
+                                                    if (post["text"] != null && (string)post["text"] != "")
+                                                        temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
+                                                    if (post["attachments"] != null)
+                                                        foreach (var attachment in post["attachments"])
+                                                            switch ((string)attachment["type"])
+                                                            {
+                                                                case "photo":
+                                                                    {
+                                                                        temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                                        if (DownloadFiles.Checked)
+                                                                        {
+                                                                            link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                                            temp_text += $"{_link}{Environment.NewLine}";
+                                                                        }
+                                                                    }
+                                                                    break;
+                                                                case "video":
+                                                                    { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
+                                                                    break;
+                                                                case "audio":
+                                                                    { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
+                                                                    break;
+                                                                case "link":
+                                                                    { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
+                                                                    break;
+                                                                case "doc":
+                                                                    {
+                                                                        temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                                        if (DownloadFiles.Checked)
+                                                                        {
+                                                                            link = (string)attachment["doc"]["url"];
+                                                                            temp_text += $"{_link}{Environment.NewLine}";
+                                                                        }
+                                                                    }
+                                                                    break;
+                                                            }
+                                                }
+                                        }
+                                        changed = true;
+                                        counters.posts_response = (JObject)postsresponse;
                                     }
-                                    else
-                                    {
-                                        List<string> NewPosts = new List<string>();
-                                        foreach (var post in postsresponse["items"]) NewPosts.Add((string)post["id"]);
-                                        foreach (var post in counters.posts_response["items"])
-                                            if (!NewPosts.Contains((string)post["id"]))
-                                            {
-                                                temp_text += $"   Removed post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
-                                                if (post["text"] != null && (string)post["text"] != "")
-                                                    temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
-                                                if (post["attachments"] != null)
-                                                    foreach (var attachment in post["attachments"])
-                                                        switch ((string)attachment["type"])
-                                                        {
-                                                            case "photo":
-                                                                {
-                                                                    temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
-                                                                    if (DownloadFiles.Checked)
-                                                                    {
-                                                                        link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
-                                                                        temp_text += $"{_link}{Environment.NewLine}";
-                                                                    }
-                                                                }
-                                                                break;
-                                                            case "video":
-                                                                { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
-                                                                break;
-                                                            case "audio":
-                                                                { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
-                                                                break;
-                                                            case "link":
-                                                                { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
-                                                                break;
-                                                            case "doc":
-                                                                {
-                                                                    temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
-                                                                    if (DownloadFiles.Checked)
-                                                                    {
-                                                                        link = (string)attachment["doc"]["url"];
-                                                                        temp_text += $"{_link}{Environment.NewLine}";
-                                                                    }
-                                                                }
-                                                                break;
-                                                        }
-                                            }
-                                    }
-                                    changed = true;
-                                    counters.posts_response = (JObject)postsresponse;
                                 }
                                 posts_timeout = false;
                             }
@@ -861,7 +875,7 @@ namespace Stalker
                 else 
                 {
                     if (!Directory.Exists(Application.StartupPath + "\\Logs")) Directory.CreateDirectory(Application.StartupPath + "\\Logs");
-                    File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", $"Log file for user id{user_id}");
+                    File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", $"Log file for user id{user_id}{Environment.NewLine}");
                     EventLogs.Text = "";
                     EventLogs.AppendText(File.ReadAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt"));
                 }
@@ -896,11 +910,7 @@ namespace Stalker
             Stalking = new Thread(Poll) { IsBackground = true, Priority = ThreadPriority.Highest };
             Stalking.Start();
             ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = false;
-            if (Logs.Checked)
-            if (!(EventLogs.Text[EventLogs.Text.Length - 3] == '—') && EventLogs.Text[EventLogs.Text.Length - 1] == '\n') 
-                WriteToFile($"————————————————————————————————————{ Environment.NewLine }");
-            else if (!(EventLogs.Text[EventLogs.Text.Length - 3] == '—')) 
-                WriteToFile($"{ Environment.NewLine }————————————————————————————————————{ Environment.NewLine }");
+            EventLogs.Text = File.ReadAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt");
         }
         private void Stop()
         {
@@ -911,6 +921,13 @@ namespace Stalker
             ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = true;
             RestrictToggles(false);
         }
+        private void PlaceSplitClicked(object sender, EventArgs e)
+        {
+            if (Logs.Checked)
+                if (EventLogs.Text[EventLogs.Text.Length - 1] == '\n')
+                    WriteToFile($"———————————————————————————————{ Environment.NewLine }");
+                else WriteToFile($"{ Environment.NewLine }———————————————————————————————{ Environment.NewLine }");
+        }
         private void StalkerTrayIcon_DoubleClick(object sender, EventArgs e)
         {
             if (WindowState == FormWindowState.Minimized) { Show(); WindowState = FormWindowState.Normal; }
@@ -918,8 +935,8 @@ namespace Stalker
         }
         private void OpenSettings_CheckedChanged(object sender, EventArgs e)
         {
-            if(OpenSettings.Checked) Size = new System.Drawing.Size(643, WindowHeight);
-            else Size = new System.Drawing.Size(509, WindowHeight);
+            if(OpenSettings.Checked) Size = new System.Drawing.Size(586, WindowHeight);
+            else Size = new System.Drawing.Size(452, WindowHeight);
         }
         private void OnPowerChange(object s, PowerModeChangedEventArgs e)
         {
@@ -943,6 +960,11 @@ namespace Stalker
         {
             if (CustomAppIdToggle.Checked) CustomAppId.Enabled = true;
             else CustomAppId.Enabled = false;
+        }
+        private void StartOnBootChecked(object sender, EventArgs e)
+        {
+            if (StartOnBoot.Checked) AutostartOnBoot.SetValue("Stalker", Application.ExecutablePath);
+            else AutostartOnBoot.DeleteValue("Stalker", false);
         }
         private List<KeyValuePair<string, string>> SettingsList()
         {
@@ -982,12 +1004,14 @@ namespace Stalker
                 new KeyValuePair<string, string>("CustomAppIdToggle", CustomAppIdToggle.Checked.ToString()),
                 new KeyValuePair<string, string>("CustomAppId", CustomAppId.Text),
                 new KeyValuePair<string, string>("DownloadFiles", DownloadFiles.Checked.ToString()),
+                new KeyValuePair<string, string>("StartOnBoot", StartOnBoot.Checked.ToString()),
+                new KeyValuePair<string, string>("DetailedLogs", DetailedLogs.Checked.ToString()),
             };
             return settingslist;
         }
         private void LoadSettings()
         {
-            Size = new System.Drawing.Size(509, WindowHeight);
+            Size = new System.Drawing.Size(452, WindowHeight);
             SystemEvents.PowerModeChanged += OnPowerChange;
             Logs.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Logs"]);
             PreventSleep.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["NoSleep"]);
@@ -1010,6 +1034,8 @@ namespace Stalker
             DownloadFiles.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["DownloadFiles"]);
             CustomAppIdToggle.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["CustomAppIdToggle"]);
             CustomAppId.Text = ConfigurationManager.AppSettings["CustomAppId"];
+            StartOnBoot.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["StartOnBoot"]);
+            DetailedLogs.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["DetailedLogs"]);
             if (SaveToken.Checked) AuthToken = ConfigurationManager.AppSettings["AuthToken"];
             else AuthToken = "";
             ClearCookies.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClearCookies"]);
@@ -1019,12 +1045,14 @@ namespace Stalker
             int index = Convert.ToInt32(ConfigurationManager.AppSettings["SelectedUser"]);
             if (ListOfIDs.Items.Count > index) ListOfIDs.SelectedIndex = index;
             if (Autostart.Checked) StartStop.Checked = true;
+            if (StartOnBoot.Checked) AutostartOnBoot.SetValue("Stalker", Application.ExecutablePath);
+            else AutostartOnBoot.DeleteValue("Stalker", false);
         }
         public Stalker()
         {
             InitializeComponent();
             LoadSettings();
-        }
+        }       
     }
     public class Counters
     {
