@@ -1069,4 +1069,3 @@ namespace Stalker
         public DateTime LastOnlineTime = DateTime.Now;
     }
 }
-
