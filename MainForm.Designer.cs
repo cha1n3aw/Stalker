@@ -1,4 +1,5 @@
-﻿namespace Stalker
+﻿
+namespace Stalker
 {
     partial class Stalker
     {
@@ -923,7 +924,6 @@
             this.Controls.Add(this.EventLogs);
             this.Controls.Add(this.CustomIdInput);
             this.Controls.Add(this.ListOfIDs);
-            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MaximizeBox = false;
             this.Name = "Stalker";
             this.Resizable = false;
@@ -997,3 +997,4 @@
         private MetroFramework.Controls.MetroToggle StartOnBoot;
     }
 }
+

@@ -1,9 +1,14 @@
 ﻿using MetroFramework.Forms;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Configuration;
+using System.Data;
+using System.Diagnostics;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -11,7 +16,13 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Forms;
+using VkNet;
+using VkNet.AudioBypassService.Extensions;
+using VkNet.Enums.Filters;
+using VkNet.Model;
+using VkNet.Model.RequestParams;
 
 namespace Stalker
 {
@@ -28,55 +39,54 @@ namespace Stalker
         string OnlineDateTime = string.Empty;
         string OnlineTime = string.Empty;
         string CurrentTime = string.Empty;
+        string[] customids = new string[] { };
         Thread Stalking;
+        VkApi api;
         System.Timers.Timer timer;
         RegistryKey AutostartOnBoot = Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", true);
 
         private string _link;
         private string link
-        { 
-            set 
-            { 
-                if (!Directory.Exists(Application.StartupPath + "\\Files"))
-                    Directory.CreateDirectory(Application.StartupPath + "\\Files");
-                string directory = $"{Application.StartupPath}\\Files\\id{user_id}-{Regex.Match(value, @"(?:[^/][\d\w\.]+)(?<=(?:.jpg)|(?:.mp4)|(?:.jpeg)|(?:.png)|(?:.pdf)|(?:.gif)|(?:.doc))").Value}";
+        {
+            set
+            {
+                if (!Directory.Exists(System.Windows.Forms.Application.StartupPath + "\\Files"))
+                    Directory.CreateDirectory(System.Windows.Forms.Application.StartupPath + "\\Files");
+                string directory = $"{System.Windows.Forms.Application.StartupPath}\\Files\\id{user_id}-{Regex.Match(value, @"(?:[^/][\d\w\.]+)(?<=(?:.jpg)|(?:.mp4)|(?:.jpeg)|(?:.png)|(?:.pdf)|(?:.gif)|(?:.doc))").Value}";
                 if (!File.Exists(directory))
-                using (WebClient wc = new WebClient())
+                    using (WebClient wc = new WebClient())
                         wc.DownloadFileAsync(new Uri(value), directory);
                 _link = $"   Downloaded file: {directory}";
-            } 
+            }
         }
 
         private void Get(string uri) { server_response = new WebClient { Encoding = Encoding.UTF8 }.DownloadString(uri); }
         private void FetchFriends()
         {
-            Get($"{ApiRequestLink}friends.get?order=name&count=5000&fields=domain&access_token={AuthToken}&v={ApiVersion}");
-            dynamic friendslist = JObject.Parse(server_response);
-            var friendsl = friendslist.response;
-            if (Convert.ToInt32(friendsl.count) > 0)
-            for (int i = 0; i < Convert.ToInt32(friendsl.count); i++)
+            var friends = api.Friends.Get(new FriendsGetParams { Fields = ProfileFields.Domain });
+            if (friends.Count > 0)
+                for (int i = 0; i < friends.Count; i++)
+                {
+                    FriendsIdList.Add(friends[i].Id.ToString());
+                    ListOfIDs.Items.Add($"{friends[i].FirstName} {friends[i].LastName}");
+                }
+            if (customids.Length > 0)
             {
-                FriendsIdList.Add((string)friendsl.items[i].id);
-                ListOfIDs.Items.Add($"{friendsl.items[i].first_name} {friendsl.items[i].last_name}");
-            }
-            Get($"{ApiRequestLink}users.get?user_ids={ConfigurationManager.AppSettings["CustomIDs"]}&access_token={AuthToken}&v={ApiVersion}");
-            dynamic customusers = JObject.Parse(server_response);
-            foreach (var user in customusers.response)
-            {
-                CustomIdList.Add((string)user.id);
-                ListOfIDs.Items.Add($"{user.first_name} {user.last_name}");
+                List<long> userIds = new List<long>();
+                foreach (string id in customids) userIds.Add(Int32.Parse(id));
+                var customusers = api.Users.Get(userIds, ProfileFields.Domain);
+                foreach (var user in customusers)
+                {
+                    CustomIdList.Add(user.Id.ToString());
+                    ListOfIDs.Items.Add($"{user.FirstName} {user.LastName}");
+                }
             }
         }
-        private void LogInVK() 
+        private void LogInVK()
         {
-            MetroAuthForm AuthForm = new MetroAuthForm();
-            if (ClearCookies.Checked) AuthForm.ClearCookies = true;
-            if (CustomAppIdToggle.Checked && int.TryParse(CustomAppId.Text, out int appid)) AuthForm.APPid = appid;
-            if (AuthForm.ShowDialog() == DialogResult.Yes) AuthToken = AuthForm.Token; 
-            else if (Application.MessageLoop) Application.Exit();
-            else Environment.Exit(1);
-            AuthForm.Dispose();
-            GC.Collect();
+            api = new VkApi(new ServiceCollection().AddAudioBypass());
+            api.Authorize(AuthParams);
+            AuthToken = api.Token;
         }
         private void Poll()
         {
@@ -91,7 +101,7 @@ namespace Stalker
             {
                 posts_timeout = true;
                 stories_timeout = true;
-            }; 
+            };
             timer.Enabled = true;
             Counters counters = new Counters();
             RestrictToggles(false);
@@ -133,7 +143,7 @@ namespace Stalker
                     OnlineDateTime = LastOnlineTime.ToString("dd MMM yyyy, HH:mm:ss", DateTimeFormatInfo.InvariantInfo); //Get last seen time in string format
                     OnlineTime = LastOnlineTime.ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
                     CurrentTime = DateTime.Now.ToString("HH:mm:ss", DateTimeFormatInfo.InvariantInfo);
-                    
+
                     LastOnlineLabel.Invoke((MethodInvoker)delegate
                     {
                         if (counters.LastOnlineTime != LastOnlineTime)
@@ -141,9 +151,9 @@ namespace Stalker
                             LastOnlineLabel.Text = $"{OnlineTime}";
                             if (DetailedLogs.Checked)
                             {
-                                if (!Directory.Exists(Application.StartupPath + "\\Logs")) Directory.CreateDirectory(Application.StartupPath + "\\Logs");
-                                if (!File.Exists(Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt")) File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt", $"Detailed online log file for user id{user_id}{Environment.NewLine}");
-                                File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt", $"{OnlineTime}{Environment.NewLine}");
+                                if (!Directory.Exists(System.Windows.Forms.Application.StartupPath + "\\Logs")) Directory.CreateDirectory(System.Windows.Forms.Application.StartupPath + "\\Logs");
+                                if (!File.Exists(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt")) File.AppendAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt", $"Detailed online log file for user id{user_id}{Environment.NewLine}");
+                                File.AppendAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}_detailed.txt", $"{OnlineTime}{Environment.NewLine}");
                             }
                             counters.LastOnlineTime = LastOnlineTime;
                         }
@@ -339,14 +349,14 @@ namespace Stalker
                                         foreach (var photo in photosresponse["items"]) NewPhotos.Add((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]);
                                         foreach (var photo in counters.photos_response["items"])
                                             if (!NewPhotos.Contains((string)photo["sizes"][photo["sizes"].Count() - 1]["url"]))
-                                            { 
+                                            {
                                                 temp_text += $"   Removed photo: {photo["sizes"][photo["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
                                                 if (DownloadFiles.Checked)
                                                 {
                                                     link = (string)photo["sizes"][photo["sizes"].Count() - 1]["url"];
                                                     temp_text += $"{_link}{Environment.NewLine}";
                                                 }
-                                            }  
+                                            }
                                     }
                                     changed = true;
                                     counters.photos_response = (JObject)photosresponse;
@@ -357,7 +367,7 @@ namespace Stalker
 
                         if (CheckGifts.Checked && decoded["counters"]["gifts"] != null && counters.decoded["counters"]["gifts"] != null && (int)counters.decoded["counters"]["gifts"] != (int)decoded["counters"]["gifts"])
                         {
-                            try 
+                            try
                             {
                                 Thread.Sleep(350);
                                 Get($"{ApiRequestLink}gifts.get?user_id={user_id}&access_token={AuthToken}&v={ApiVersion}"); //get gifts
@@ -386,19 +396,20 @@ namespace Stalker
                                     changed = true;
                                     counters.gifts_response = (JObject)giftsresponse;
                                 }
-                            } catch (Exception e) { WriteToFile($"Exception thrown at gifts check, {e.Message}{Environment.NewLine}"); }
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at gifts check, {e.Message}{Environment.NewLine}"); }
                         }
-                    
+
                         if (CheckVideos.Checked && decoded["counters"]["videos"] != null && counters.decoded["counters"]["videos"] != null && (int)counters.decoded["counters"]["videos"] != (int)decoded["counters"]["videos"])
                         {
-                            try 
+                            try
                             {
                                 Thread.Sleep(350); //timeout on api requests
                                 Get($"{ApiRequestLink}video.get?owner_id={user_id}&access_token={AuthToken}&v={ApiVersion}");
                                 JObject videos = JObject.Parse(server_response);
                                 var videosresponse = videos["response"];
                                 if (counters.videos_response == null) counters.videos_response = (JObject)videosresponse;
-                                else 
+                                else
                                 {
                                     temp_text += $"{ CurrentTime }, Update in videos: { counters.decoded["counters"]["videos"] }  to { decoded["counters"]["videos"] }{ Environment.NewLine }";
                                     if ((int)counters.decoded["counters"]["videos"] < (int)decoded["counters"]["videos"])
@@ -430,7 +441,8 @@ namespace Stalker
                                     changed = true;
                                     counters.videos_response = (JObject)videosresponse;
                                 }
-                            } catch (Exception e) { WriteToFile($"Exception thrown at video check, {e.Message}{Environment.NewLine}"); }  
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at video check, {e.Message}{Environment.NewLine}"); }
                         }
 
                         if (CheckFriends.Checked && decoded["counters"]["friends"] != null && counters.decoded["counters"]["friends"] != null && (int)counters.decoded["counters"]["friends"] != (int)decoded["counters"]["friends"])
@@ -464,7 +476,8 @@ namespace Stalker
                                 }
                                 changed = true;
                                 counters.friends_response = (JObject)friendsresponse;
-                            } catch (Exception e) { WriteToFile($"Exception thrown at friends check, {e.Message}{Environment.NewLine}"); }
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at friends check, {e.Message}{Environment.NewLine}"); }
                         }
 
                         if (CheckFollowers.Checked && decoded["counters"]["followers"] != null && counters.decoded["counters"]["followers"] != null && (int)counters.decoded["counters"]["followers"] != (int)decoded["counters"]["followers"])
@@ -498,7 +511,8 @@ namespace Stalker
                                 }
                                 changed = true;
                                 counters.followers_response = (JObject)followersresponse;
-                            } catch (Exception e) { WriteToFile($"Exception thrown at followers check, {e.Message}{Environment.NewLine}"); }
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at followers check, {e.Message}{Environment.NewLine}"); }
                         }
                         if (CheckPosts.Checked && posts_timeout)
                         {
@@ -612,7 +626,7 @@ namespace Stalker
                                 }
                                 posts_timeout = false;
                             }
-                            catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); BeginInvoke(new MethodInvoker(delegate { CheckPosts.Checked = false; }));  }
+                            catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); BeginInvoke(new MethodInvoker(delegate { CheckPosts.Checked = false; })); }
                         }
                         if (CheckStories.Checked && stories_timeout)
                         {
@@ -761,7 +775,7 @@ namespace Stalker
                             catch (Exception e) { WriteToFile($"Exception thrown at stories check, {e.Message}{Environment.NewLine}"); }
                         }
                     }
-                
+
                     if (CheckPages.Checked && decoded["counters"]["pages"] != null && (int)counters.decoded["counters"]["pages"] != (int)decoded["counters"]["pages"])
                     {
                         temp_text += $"{ CurrentTime }, Update in pages: { counters.decoded["counters"]["pages"] }  to { decoded["counters"]["pages"] }{ Environment.NewLine }";
@@ -791,7 +805,7 @@ namespace Stalker
                                 }
                             }
                             else if (decoded["status_audio"] != null)
-                            { 
+                            {
                                 temp_text += $"{ CurrentTime }, Started listening to music: { decoded["status_audio"]["artist"] } - { decoded["status_audio"]["title"] }{ Environment.NewLine }";
                                 changed = true;
                             }
@@ -817,18 +831,19 @@ namespace Stalker
                         else WriteToFile($"  { OnlineDateTime }{ Environment.NewLine }"); //if transition online to offline happened
                     }
                     counters.decoded = (JObject)decoded;
-                } catch (Exception e) { WriteToFile($"Global error, possibly get counters failed, {e.Message}{Environment.NewLine}"); }
+                }
+                catch (Exception e) { WriteToFile($"Global error, possibly get counters failed, {e.Message}{Environment.NewLine}"); }
                 Thread.Sleep(350);
             }
         }
         private void WriteToFile(string text)
         {
-            string[] str = File.ReadAllLines(Application.StartupPath + $"\\Logs\\{user_id}.txt");
-            EventLogs.Invoke((MethodInvoker)delegate 
-            { 
-                EventLogs.AppendText(text); 
+            string[] str = File.ReadAllLines(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt");
+            EventLogs.Invoke((MethodInvoker)delegate
+            {
+                EventLogs.AppendText(text);
             });
-            if (Logs.Checked) File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", text);
+            if (Logs.Checked) File.AppendAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt", text);
         }
         protected override void OnFormClosing(FormClosingEventArgs e)
         {
@@ -858,26 +873,26 @@ namespace Stalker
             {
                 BeginInvoke(new MethodInvoker(delegate
                 {
-                    CheckAlbums.Enabled = CheckAudios.Enabled = 
-                    CheckClips.Enabled = CheckFollowers.Enabled = 
-                    CheckGifts.Enabled = CheckPhotos.Enabled = 
-                    CheckPosts.Enabled = CheckSubscriptions.Enabled = 
+                    CheckAlbums.Enabled = CheckAudios.Enabled =
+                    CheckClips.Enabled = CheckFollowers.Enabled =
+                    CheckGifts.Enabled = CheckPhotos.Enabled =
+                    CheckPosts.Enabled = CheckSubscriptions.Enabled =
                     CheckVideos.Enabled = true;
                 }));
             }
         }
-        private void FriendsIdSelected(object sender, EventArgs e) 
+        private void FriendsIdSelected(object sender, EventArgs e)
         {
             if (FriendsIdList.Count > 0 && ListOfIDs.SelectedIndex < FriendsIdList.Count) user_id = Convert.ToInt32(FriendsIdList[ListOfIDs.SelectedIndex]);
             else if (CustomIdList.Count > 0 && ListOfIDs.SelectedIndex >= FriendsIdList.Count) user_id = Convert.ToInt32(CustomIdList[ListOfIDs.SelectedIndex - FriendsIdList.Count]);
             if (Logs.Checked)
-                if (File.Exists(Application.StartupPath + $"\\Logs\\{user_id}.txt")) EventLogs.Invoke((MethodInvoker)delegate { EventLogs.Text = ""; EventLogs.AppendText(File.ReadAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt")); });
-                else 
+                if (File.Exists(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt")) EventLogs.Invoke((MethodInvoker)delegate { EventLogs.Text = ""; EventLogs.AppendText(File.ReadAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt")); });
+                else
                 {
-                    if (!Directory.Exists(Application.StartupPath + "\\Logs")) Directory.CreateDirectory(Application.StartupPath + "\\Logs");
-                    File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", $"Log file for user id{user_id}{Environment.NewLine}");
+                    if (!Directory.Exists(System.Windows.Forms.Application.StartupPath + "\\Logs")) Directory.CreateDirectory(System.Windows.Forms.Application.StartupPath + "\\Logs");
+                    File.AppendAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt", $"Log file for user id{user_id}{Environment.NewLine}");
                     EventLogs.Text = "";
-                    EventLogs.AppendText(File.ReadAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt"));
+                    EventLogs.AppendText(File.ReadAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt"));
                 }
         }
         private void CustomUserIdEntered(object sender, KeyEventArgs e)
@@ -901,8 +916,8 @@ namespace Stalker
         }
         private void StartStop_CheckedChanged(object sender, EventArgs e)
         {
-            if (StartStop.Checked) Start();  
-            else Stop(); 
+            if (StartStop.Checked) Start();
+            else Stop();
         }
         private void Start()
         {
@@ -910,14 +925,14 @@ namespace Stalker
             Stalking = new Thread(Poll) { IsBackground = true, Priority = ThreadPriority.Highest };
             Stalking.Start();
             ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = false;
-            EventLogs.Text = File.ReadAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt");
+            EventLogs.Text = File.ReadAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt");
         }
         private void Stop()
         {
             StartStopLabel.Text = "Start";
             LastOnlineLabel.Text = "Last Online";
             if (EventLogs.Text[EventLogs.Text.Length - 1] == '—' && Logs.Checked)
-                File.AppendAllText(Application.StartupPath + $"\\Logs\\{user_id}.txt", $"  { OnlineDateTime }{ Environment.NewLine }");
+                File.AppendAllText(System.Windows.Forms.Application.StartupPath + $"\\Logs\\{user_id}.txt", $"  { OnlineDateTime }{ Environment.NewLine }");
             ListOfIDs.Enabled = CustomIdInput.Enabled = Logs.Enabled = true;
             RestrictToggles(false);
         }
@@ -935,7 +950,7 @@ namespace Stalker
         }
         private void OpenSettings_CheckedChanged(object sender, EventArgs e)
         {
-            if(OpenSettings.Checked) Size = new System.Drawing.Size(586, WindowHeight);
+            if (OpenSettings.Checked) Size = new System.Drawing.Size(586, WindowHeight);
             else Size = new System.Drawing.Size(452, WindowHeight);
         }
         private void OnPowerChange(object s, PowerModeChangedEventArgs e)
@@ -951,7 +966,7 @@ namespace Stalker
         }
         private static void SetSetting(List<KeyValuePair<string, string>> settingslist)
         {
-            Configuration configuration = ConfigurationManager.OpenExeConfiguration(Application.ExecutablePath);
+            Configuration configuration = ConfigurationManager.OpenExeConfiguration(System.Windows.Forms.Application.ExecutablePath);
             foreach (KeyValuePair<string, string> pair in settingslist) configuration.AppSettings.Settings[pair.Key].Value = pair.Value;
             configuration.Save(ConfigurationSaveMode.Full, true);
             ConfigurationManager.RefreshSection("appSettings");
@@ -963,7 +978,7 @@ namespace Stalker
         }
         private void StartOnBootChecked(object sender, EventArgs e)
         {
-            if (StartOnBoot.Checked) AutostartOnBoot.SetValue("Stalker", Application.ExecutablePath);
+            if (StartOnBoot.Checked) AutostartOnBoot.SetValue("Stalker", System.Windows.Forms.Application.ExecutablePath);
             else AutostartOnBoot.DeleteValue("Stalker", false);
         }
         private List<KeyValuePair<string, string>> SettingsList()
@@ -1040,19 +1055,21 @@ namespace Stalker
             else AuthToken = "";
             ClearCookies.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["ClearCookies"]);
             Autostart.Checked = Convert.ToBoolean(ConfigurationManager.AppSettings["Autostart"]);
+            if (ConfigurationManager.AppSettings["CustomIDs"] != String.Empty)
+                customids = ConfigurationManager.AppSettings["CustomIDs"].Split(',');
             if (!SaveToken.Checked || AuthToken == "") LogInVK();
             FetchFriends();
             int index = Convert.ToInt32(ConfigurationManager.AppSettings["SelectedUser"]);
             if (ListOfIDs.Items.Count > index) ListOfIDs.SelectedIndex = index;
             if (Autostart.Checked) StartStop.Checked = true;
-            if (StartOnBoot.Checked) AutostartOnBoot.SetValue("Stalker", Application.ExecutablePath);
+            if (StartOnBoot.Checked) AutostartOnBoot.SetValue("Stalker", System.Windows.Forms.Application.ExecutablePath);
             else AutostartOnBoot.DeleteValue("Stalker", false);
         }
         public Stalker()
         {
             InitializeComponent();
             LoadSettings();
-        }       
+        }
     }
     public class Counters
     {

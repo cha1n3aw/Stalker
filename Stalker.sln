@@ -3,35 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30711.63
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stalker", "Stalker.csproj", "{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stalker", "Stalker.csproj", "{B7527A8C-7BEB-41BF-95D7-A19486C6396B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
-		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
-		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Debug|x64.ActiveCfg = Debug|x64
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Debug|x64.Build.0 = Debug|x64
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Debug|x86.ActiveCfg = Debug|x86
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Debug|x86.Build.0 = Debug|x86
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Release|x64.ActiveCfg = Release|x64
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Release|x64.Build.0 = Release|x64
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Release|x86.ActiveCfg = Release|x86
-		{28BF2C29-5EB6-4C97-BFA5-8BC559C3997D}.Release|x86.Build.0 = Release|x86
+		{B7527A8C-7BEB-41BF-95D7-A19486C6396B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B7527A8C-7BEB-41BF-95D7-A19486C6396B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B7527A8C-7BEB-41BF-95D7-A19486C6396B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B7527A8C-7BEB-41BF-95D7-A19486C6396B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {1D9B9695-2B92-4EE7-96CB-7C683C1F9019}
+		SolutionGuid = {0999D038-A793-4C7A-ADA6-E8117A3E6C56}
 	EndGlobalSection
 EndGlobal
