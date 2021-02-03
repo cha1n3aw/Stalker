@@ -48,29 +48,23 @@ namespace Stalker
             this.CheckFollowers = new MetroFramework.Controls.MetroToggle();
             this.CheckFriends = new MetroFramework.Controls.MetroToggle();
             this.CheckGifts = new MetroFramework.Controls.MetroToggle();
-            this.CheckPages = new MetroFramework.Controls.MetroToggle();
             this.CheckPhotos = new MetroFramework.Controls.MetroToggle();
-            this.CheckSubscriptions = new MetroFramework.Controls.MetroToggle();
+            this.CheckGroups = new MetroFramework.Controls.MetroToggle();
             this.CheckVideos = new MetroFramework.Controls.MetroToggle();
             this.metroLabel5 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel6 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel7 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel8 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel9 = new MetroFramework.Controls.MetroLabel();
-            this.metroLabel10 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel11 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel12 = new MetroFramework.Controls.MetroLabel();
             this.metroLabel13 = new MetroFramework.Controls.MetroLabel();
-            this.metroLabel14 = new MetroFramework.Controls.MetroLabel();
-            this.CheckClips = new MetroFramework.Controls.MetroToggle();
             this.metroLabel15 = new MetroFramework.Controls.MetroLabel();
             this.CheckStatus = new MetroFramework.Controls.MetroToggle();
             this.metroLabel16 = new MetroFramework.Controls.MetroLabel();
             this.CheckOnlineDevice = new MetroFramework.Controls.MetroToggle();
             this.metroLabel17 = new MetroFramework.Controls.MetroLabel();
             this.SaveToken = new MetroFramework.Controls.MetroToggle();
-            this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
-            this.ClearCookies = new MetroFramework.Controls.MetroToggle();
             this.metroLabel18 = new MetroFramework.Controls.MetroLabel();
             this.Autostart = new MetroFramework.Controls.MetroToggle();
             this.metroLabel19 = new MetroFramework.Controls.MetroLabel();
@@ -87,6 +81,8 @@ namespace Stalker
             this.DetailedLogs = new MetroFramework.Controls.MetroToggle();
             this.metroLabel23 = new MetroFramework.Controls.MetroLabel();
             this.StartOnBoot = new MetroFramework.Controls.MetroToggle();
+            this.metroLabel3 = new MetroFramework.Controls.MetroLabel();
+            this.CheckAudioAlbums = new MetroFramework.Controls.MetroToggle();
             this.SuspendLayout();
             // 
             // ListOfIDs
@@ -147,9 +143,9 @@ namespace Stalker
             // 
             // 
             this.EventLogs.CustomButton.Image = null;
-            this.EventLogs.CustomButton.Location = new System.Drawing.Point(-54, 1);
+            this.EventLogs.CustomButton.Location = new System.Drawing.Point(-36, 1);
             this.EventLogs.CustomButton.Name = "";
-            this.EventLogs.CustomButton.Size = new System.Drawing.Size(459, 459);
+            this.EventLogs.CustomButton.Size = new System.Drawing.Size(441, 441);
             this.EventLogs.CustomButton.Style = MetroFramework.MetroColorStyle.Blue;
             this.EventLogs.CustomButton.TabIndex = 1;
             this.EventLogs.CustomButton.Theme = MetroFramework.MetroThemeStyle.Light;
@@ -167,7 +163,7 @@ namespace Stalker
             this.EventLogs.SelectionLength = 0;
             this.EventLogs.SelectionStart = 0;
             this.EventLogs.ShortcutsEnabled = true;
-            this.EventLogs.Size = new System.Drawing.Size(406, 461);
+            this.EventLogs.Size = new System.Drawing.Size(406, 443);
             this.EventLogs.Style = MetroFramework.MetroColorStyle.Black;
             this.EventLogs.TabIndex = 2;
             this.EventLogs.Theme = MetroFramework.MetroThemeStyle.Dark;
@@ -194,7 +190,7 @@ namespace Stalker
             this.Logs.Checked = true;
             this.Logs.CheckState = System.Windows.Forms.CheckState.Checked;
             this.Logs.DisplayStatus = false;
-            this.Logs.Location = new System.Drawing.Point(538, 147);
+            this.Logs.Location = new System.Drawing.Point(538, 126);
             this.Logs.Name = "Logs";
             this.Logs.Size = new System.Drawing.Size(25, 15);
             this.Logs.Style = MetroFramework.MetroColorStyle.Black;
@@ -207,7 +203,7 @@ namespace Stalker
             // 
             this.metroLabel1.AutoSize = true;
             this.metroLabel1.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel1.Location = new System.Drawing.Point(452, 147);
+            this.metroLabel1.Location = new System.Drawing.Point(452, 126);
             this.metroLabel1.Name = "metroLabel1";
             this.metroLabel1.Size = new System.Drawing.Size(31, 15);
             this.metroLabel1.Style = MetroFramework.MetroColorStyle.Black;
@@ -290,7 +286,7 @@ namespace Stalker
             this.CheckAlbums.Checked = true;
             this.CheckAlbums.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckAlbums.DisplayStatus = false;
-            this.CheckAlbums.Location = new System.Drawing.Point(538, 210);
+            this.CheckAlbums.Location = new System.Drawing.Point(538, 189);
             this.CheckAlbums.Name = "CheckAlbums";
             this.CheckAlbums.Size = new System.Drawing.Size(25, 15);
             this.CheckAlbums.Style = MetroFramework.MetroColorStyle.Black;
@@ -304,7 +300,7 @@ namespace Stalker
             this.CheckAudios.Checked = true;
             this.CheckAudios.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckAudios.DisplayStatus = false;
-            this.CheckAudios.Location = new System.Drawing.Point(538, 231);
+            this.CheckAudios.Location = new System.Drawing.Point(538, 210);
             this.CheckAudios.Name = "CheckAudios";
             this.CheckAudios.Size = new System.Drawing.Size(25, 15);
             this.CheckAudios.Style = MetroFramework.MetroColorStyle.Black;
@@ -318,7 +314,7 @@ namespace Stalker
             this.CheckFollowers.Checked = true;
             this.CheckFollowers.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckFollowers.DisplayStatus = false;
-            this.CheckFollowers.Location = new System.Drawing.Point(538, 294);
+            this.CheckFollowers.Location = new System.Drawing.Point(538, 273);
             this.CheckFollowers.Name = "CheckFollowers";
             this.CheckFollowers.Size = new System.Drawing.Size(25, 15);
             this.CheckFollowers.Style = MetroFramework.MetroColorStyle.Black;
@@ -332,7 +328,7 @@ namespace Stalker
             this.CheckFriends.Checked = true;
             this.CheckFriends.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckFriends.DisplayStatus = false;
-            this.CheckFriends.Location = new System.Drawing.Point(538, 315);
+            this.CheckFriends.Location = new System.Drawing.Point(538, 294);
             this.CheckFriends.Name = "CheckFriends";
             this.CheckFriends.Size = new System.Drawing.Size(25, 15);
             this.CheckFriends.Style = MetroFramework.MetroColorStyle.Black;
@@ -346,7 +342,7 @@ namespace Stalker
             this.CheckGifts.Checked = true;
             this.CheckGifts.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckGifts.DisplayStatus = false;
-            this.CheckGifts.Location = new System.Drawing.Point(538, 336);
+            this.CheckGifts.Location = new System.Drawing.Point(538, 315);
             this.CheckGifts.Name = "CheckGifts";
             this.CheckGifts.Size = new System.Drawing.Size(25, 15);
             this.CheckGifts.Style = MetroFramework.MetroColorStyle.Black;
@@ -355,26 +351,12 @@ namespace Stalker
             this.CheckGifts.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.CheckGifts.UseSelectable = true;
             // 
-            // CheckPages
-            // 
-            this.CheckPages.Checked = true;
-            this.CheckPages.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CheckPages.DisplayStatus = false;
-            this.CheckPages.Location = new System.Drawing.Point(538, 357);
-            this.CheckPages.Name = "CheckPages";
-            this.CheckPages.Size = new System.Drawing.Size(25, 15);
-            this.CheckPages.Style = MetroFramework.MetroColorStyle.Black;
-            this.CheckPages.TabIndex = 20;
-            this.CheckPages.Text = "On";
-            this.CheckPages.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.CheckPages.UseSelectable = true;
-            // 
             // CheckPhotos
             // 
             this.CheckPhotos.Checked = true;
             this.CheckPhotos.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckPhotos.DisplayStatus = false;
-            this.CheckPhotos.Location = new System.Drawing.Point(538, 378);
+            this.CheckPhotos.Location = new System.Drawing.Point(538, 336);
             this.CheckPhotos.Name = "CheckPhotos";
             this.CheckPhotos.Size = new System.Drawing.Size(25, 15);
             this.CheckPhotos.Style = MetroFramework.MetroColorStyle.Black;
@@ -383,26 +365,26 @@ namespace Stalker
             this.CheckPhotos.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.CheckPhotos.UseSelectable = true;
             // 
-            // CheckSubscriptions
+            // CheckGroups
             // 
-            this.CheckSubscriptions.Checked = true;
-            this.CheckSubscriptions.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CheckSubscriptions.DisplayStatus = false;
-            this.CheckSubscriptions.Location = new System.Drawing.Point(538, 441);
-            this.CheckSubscriptions.Name = "CheckSubscriptions";
-            this.CheckSubscriptions.Size = new System.Drawing.Size(25, 15);
-            this.CheckSubscriptions.Style = MetroFramework.MetroColorStyle.Black;
-            this.CheckSubscriptions.TabIndex = 22;
-            this.CheckSubscriptions.Text = "On";
-            this.CheckSubscriptions.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.CheckSubscriptions.UseSelectable = true;
+            this.CheckGroups.Checked = true;
+            this.CheckGroups.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CheckGroups.DisplayStatus = false;
+            this.CheckGroups.Location = new System.Drawing.Point(538, 399);
+            this.CheckGroups.Name = "CheckGroups";
+            this.CheckGroups.Size = new System.Drawing.Size(25, 15);
+            this.CheckGroups.Style = MetroFramework.MetroColorStyle.Black;
+            this.CheckGroups.TabIndex = 22;
+            this.CheckGroups.Text = "On";
+            this.CheckGroups.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.CheckGroups.UseSelectable = true;
             // 
             // CheckVideos
             // 
             this.CheckVideos.Checked = true;
             this.CheckVideos.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckVideos.DisplayStatus = false;
-            this.CheckVideos.Location = new System.Drawing.Point(538, 462);
+            this.CheckVideos.Location = new System.Drawing.Point(538, 420);
             this.CheckVideos.Name = "CheckVideos";
             this.CheckVideos.Size = new System.Drawing.Size(25, 15);
             this.CheckVideos.Style = MetroFramework.MetroColorStyle.Black;
@@ -415,7 +397,7 @@ namespace Stalker
             // 
             this.metroLabel5.AutoSize = true;
             this.metroLabel5.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel5.Location = new System.Drawing.Point(452, 210);
+            this.metroLabel5.Location = new System.Drawing.Point(452, 189);
             this.metroLabel5.Name = "metroLabel5";
             this.metroLabel5.Size = new System.Drawing.Size(45, 15);
             this.metroLabel5.Style = MetroFramework.MetroColorStyle.Black;
@@ -427,7 +409,7 @@ namespace Stalker
             // 
             this.metroLabel6.AutoSize = true;
             this.metroLabel6.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel6.Location = new System.Drawing.Point(452, 231);
+            this.metroLabel6.Location = new System.Drawing.Point(452, 210);
             this.metroLabel6.Name = "metroLabel6";
             this.metroLabel6.Size = new System.Drawing.Size(42, 15);
             this.metroLabel6.Style = MetroFramework.MetroColorStyle.Black;
@@ -439,7 +421,7 @@ namespace Stalker
             // 
             this.metroLabel7.AutoSize = true;
             this.metroLabel7.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel7.Location = new System.Drawing.Point(452, 294);
+            this.metroLabel7.Location = new System.Drawing.Point(452, 273);
             this.metroLabel7.Name = "metroLabel7";
             this.metroLabel7.Size = new System.Drawing.Size(54, 15);
             this.metroLabel7.Style = MetroFramework.MetroColorStyle.Black;
@@ -451,7 +433,7 @@ namespace Stalker
             // 
             this.metroLabel8.AutoSize = true;
             this.metroLabel8.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel8.Location = new System.Drawing.Point(452, 315);
+            this.metroLabel8.Location = new System.Drawing.Point(452, 294);
             this.metroLabel8.Name = "metroLabel8";
             this.metroLabel8.Size = new System.Drawing.Size(43, 15);
             this.metroLabel8.Style = MetroFramework.MetroColorStyle.Black;
@@ -463,7 +445,7 @@ namespace Stalker
             // 
             this.metroLabel9.AutoSize = true;
             this.metroLabel9.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel9.Location = new System.Drawing.Point(452, 336);
+            this.metroLabel9.Location = new System.Drawing.Point(452, 315);
             this.metroLabel9.Name = "metroLabel9";
             this.metroLabel9.Size = new System.Drawing.Size(29, 15);
             this.metroLabel9.Style = MetroFramework.MetroColorStyle.Black;
@@ -471,23 +453,11 @@ namespace Stalker
             this.metroLabel9.Text = "Gifts";
             this.metroLabel9.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
-            // metroLabel10
-            // 
-            this.metroLabel10.AutoSize = true;
-            this.metroLabel10.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel10.Location = new System.Drawing.Point(452, 357);
-            this.metroLabel10.Name = "metroLabel10";
-            this.metroLabel10.Size = new System.Drawing.Size(37, 15);
-            this.metroLabel10.Style = MetroFramework.MetroColorStyle.Black;
-            this.metroLabel10.TabIndex = 29;
-            this.metroLabel10.Text = "Pages";
-            this.metroLabel10.Theme = MetroFramework.MetroThemeStyle.Dark;
-            // 
             // metroLabel11
             // 
             this.metroLabel11.AutoSize = true;
             this.metroLabel11.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel11.Location = new System.Drawing.Point(452, 378);
+            this.metroLabel11.Location = new System.Drawing.Point(452, 336);
             this.metroLabel11.Name = "metroLabel11";
             this.metroLabel11.Size = new System.Drawing.Size(43, 15);
             this.metroLabel11.Style = MetroFramework.MetroColorStyle.Black;
@@ -499,7 +469,7 @@ namespace Stalker
             // 
             this.metroLabel12.AutoSize = true;
             this.metroLabel12.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel12.Location = new System.Drawing.Point(452, 441);
+            this.metroLabel12.Location = new System.Drawing.Point(452, 399);
             this.metroLabel12.Name = "metroLabel12";
             this.metroLabel12.Size = new System.Drawing.Size(73, 15);
             this.metroLabel12.Style = MetroFramework.MetroColorStyle.Black;
@@ -511,7 +481,7 @@ namespace Stalker
             // 
             this.metroLabel13.AutoSize = true;
             this.metroLabel13.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel13.Location = new System.Drawing.Point(452, 462);
+            this.metroLabel13.Location = new System.Drawing.Point(452, 420);
             this.metroLabel13.Name = "metroLabel13";
             this.metroLabel13.Size = new System.Drawing.Size(41, 15);
             this.metroLabel13.Style = MetroFramework.MetroColorStyle.Black;
@@ -519,37 +489,11 @@ namespace Stalker
             this.metroLabel13.Text = "Videos";
             this.metroLabel13.Theme = MetroFramework.MetroThemeStyle.Dark;
             // 
-            // metroLabel14
-            // 
-            this.metroLabel14.AutoSize = true;
-            this.metroLabel14.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel14.Location = new System.Drawing.Point(452, 252);
-            this.metroLabel14.Name = "metroLabel14";
-            this.metroLabel14.Size = new System.Drawing.Size(80, 15);
-            this.metroLabel14.Style = MetroFramework.MetroColorStyle.Black;
-            this.metroLabel14.TabIndex = 34;
-            this.metroLabel14.Text = "Clips Followers";
-            this.metroLabel14.Theme = MetroFramework.MetroThemeStyle.Dark;
-            // 
-            // CheckClips
-            // 
-            this.CheckClips.Checked = true;
-            this.CheckClips.CheckState = System.Windows.Forms.CheckState.Checked;
-            this.CheckClips.DisplayStatus = false;
-            this.CheckClips.Location = new System.Drawing.Point(538, 252);
-            this.CheckClips.Name = "CheckClips";
-            this.CheckClips.Size = new System.Drawing.Size(25, 15);
-            this.CheckClips.Style = MetroFramework.MetroColorStyle.Black;
-            this.CheckClips.TabIndex = 33;
-            this.CheckClips.Text = "On";
-            this.CheckClips.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.CheckClips.UseSelectable = true;
-            // 
             // metroLabel15
             // 
             this.metroLabel15.AutoSize = true;
             this.metroLabel15.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel15.Location = new System.Drawing.Point(452, 399);
+            this.metroLabel15.Location = new System.Drawing.Point(452, 357);
             this.metroLabel15.Name = "metroLabel15";
             this.metroLabel15.Size = new System.Drawing.Size(38, 15);
             this.metroLabel15.Style = MetroFramework.MetroColorStyle.Black;
@@ -562,7 +506,7 @@ namespace Stalker
             this.CheckStatus.Checked = true;
             this.CheckStatus.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckStatus.DisplayStatus = false;
-            this.CheckStatus.Location = new System.Drawing.Point(538, 399);
+            this.CheckStatus.Location = new System.Drawing.Point(538, 357);
             this.CheckStatus.Name = "CheckStatus";
             this.CheckStatus.Size = new System.Drawing.Size(25, 15);
             this.CheckStatus.Style = MetroFramework.MetroColorStyle.Black;
@@ -575,7 +519,7 @@ namespace Stalker
             // 
             this.metroLabel16.AutoSize = true;
             this.metroLabel16.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel16.Location = new System.Drawing.Point(452, 273);
+            this.metroLabel16.Location = new System.Drawing.Point(452, 252);
             this.metroLabel16.Name = "metroLabel16";
             this.metroLabel16.Size = new System.Drawing.Size(39, 15);
             this.metroLabel16.Style = MetroFramework.MetroColorStyle.Black;
@@ -588,7 +532,7 @@ namespace Stalker
             this.CheckOnlineDevice.Checked = true;
             this.CheckOnlineDevice.CheckState = System.Windows.Forms.CheckState.Checked;
             this.CheckOnlineDevice.DisplayStatus = false;
-            this.CheckOnlineDevice.Location = new System.Drawing.Point(538, 273);
+            this.CheckOnlineDevice.Location = new System.Drawing.Point(538, 252);
             this.CheckOnlineDevice.Name = "CheckOnlineDevice";
             this.CheckOnlineDevice.Size = new System.Drawing.Size(25, 15);
             this.CheckOnlineDevice.Style = MetroFramework.MetroColorStyle.Black;
@@ -601,7 +545,7 @@ namespace Stalker
             // 
             this.metroLabel17.AutoSize = true;
             this.metroLabel17.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel17.Location = new System.Drawing.Point(452, 168);
+            this.metroLabel17.Location = new System.Drawing.Point(452, 147);
             this.metroLabel17.Name = "metroLabel17";
             this.metroLabel17.Size = new System.Drawing.Size(61, 15);
             this.metroLabel17.Style = MetroFramework.MetroColorStyle.Black;
@@ -612,7 +556,7 @@ namespace Stalker
             // SaveToken
             // 
             this.SaveToken.DisplayStatus = false;
-            this.SaveToken.Location = new System.Drawing.Point(538, 168);
+            this.SaveToken.Location = new System.Drawing.Point(538, 147);
             this.SaveToken.Name = "SaveToken";
             this.SaveToken.Size = new System.Drawing.Size(25, 15);
             this.SaveToken.Style = MetroFramework.MetroColorStyle.Black;
@@ -620,30 +564,6 @@ namespace Stalker
             this.SaveToken.Text = "Off";
             this.SaveToken.Theme = MetroFramework.MetroThemeStyle.Dark;
             this.SaveToken.UseSelectable = true;
-            // 
-            // metroLabel3
-            // 
-            this.metroLabel3.AutoSize = true;
-            this.metroLabel3.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel3.Location = new System.Drawing.Point(452, 105);
-            this.metroLabel3.Name = "metroLabel3";
-            this.metroLabel3.Size = new System.Drawing.Size(74, 15);
-            this.metroLabel3.Style = MetroFramework.MetroColorStyle.Black;
-            this.metroLabel3.TabIndex = 43;
-            this.metroLabel3.Text = "Clear Cookies";
-            this.metroLabel3.Theme = MetroFramework.MetroThemeStyle.Dark;
-            // 
-            // ClearCookies
-            // 
-            this.ClearCookies.DisplayStatus = false;
-            this.ClearCookies.Location = new System.Drawing.Point(538, 105);
-            this.ClearCookies.Name = "ClearCookies";
-            this.ClearCookies.Size = new System.Drawing.Size(25, 15);
-            this.ClearCookies.Style = MetroFramework.MetroColorStyle.Black;
-            this.ClearCookies.TabIndex = 42;
-            this.ClearCookies.Text = "Off";
-            this.ClearCookies.Theme = MetroFramework.MetroThemeStyle.Dark;
-            this.ClearCookies.UseSelectable = true;
             // 
             // metroLabel18
             // 
@@ -673,7 +593,7 @@ namespace Stalker
             // 
             this.metroLabel19.AutoSize = true;
             this.metroLabel19.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel19.Location = new System.Drawing.Point(452, 483);
+            this.metroLabel19.Location = new System.Drawing.Point(452, 441);
             this.metroLabel19.Name = "metroLabel19";
             this.metroLabel19.Size = new System.Drawing.Size(57, 15);
             this.metroLabel19.Style = MetroFramework.MetroColorStyle.Black;
@@ -684,7 +604,7 @@ namespace Stalker
             // CheckPosts
             // 
             this.CheckPosts.DisplayStatus = false;
-            this.CheckPosts.Location = new System.Drawing.Point(538, 483);
+            this.CheckPosts.Location = new System.Drawing.Point(538, 441);
             this.CheckPosts.Name = "CheckPosts";
             this.CheckPosts.Size = new System.Drawing.Size(25, 15);
             this.CheckPosts.Style = MetroFramework.MetroColorStyle.Black;
@@ -697,7 +617,7 @@ namespace Stalker
             // 
             this.LastOnlineLabel.AutoSize = true;
             this.LastOnlineLabel.FontSize = MetroFramework.MetroLabelSize.Tall;
-            this.LastOnlineLabel.Location = new System.Drawing.Point(452, 543);
+            this.LastOnlineLabel.Location = new System.Drawing.Point(452, 501);
             this.LastOnlineLabel.Name = "LastOnlineLabel";
             this.LastOnlineLabel.Size = new System.Drawing.Size(97, 25);
             this.LastOnlineLabel.Style = MetroFramework.MetroColorStyle.Black;
@@ -708,7 +628,7 @@ namespace Stalker
             // CustomAppIdToggle
             // 
             this.CustomAppIdToggle.DisplayStatus = false;
-            this.CustomAppIdToggle.Location = new System.Drawing.Point(538, 189);
+            this.CustomAppIdToggle.Location = new System.Drawing.Point(538, 168);
             this.CustomAppIdToggle.Name = "CustomAppIdToggle";
             this.CustomAppIdToggle.Size = new System.Drawing.Size(25, 15);
             this.CustomAppIdToggle.Style = MetroFramework.MetroColorStyle.Black;
@@ -734,7 +654,7 @@ namespace Stalker
             this.CustomAppId.CustomButton.Visible = false;
             this.CustomAppId.Enabled = false;
             this.CustomAppId.Lines = new string[0];
-            this.CustomAppId.Location = new System.Drawing.Point(452, 186);
+            this.CustomAppId.Location = new System.Drawing.Point(452, 165);
             this.CustomAppId.MaxLength = 32767;
             this.CustomAppId.Name = "CustomAppId";
             this.CustomAppId.PasswordChar = '\0';
@@ -758,7 +678,7 @@ namespace Stalker
             // 
             this.metroLabel20.AutoSize = true;
             this.metroLabel20.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel20.Location = new System.Drawing.Point(452, 420);
+            this.metroLabel20.Location = new System.Drawing.Point(452, 378);
             this.metroLabel20.Name = "metroLabel20";
             this.metroLabel20.Size = new System.Drawing.Size(41, 15);
             this.metroLabel20.Style = MetroFramework.MetroColorStyle.Black;
@@ -769,7 +689,7 @@ namespace Stalker
             // CheckStories
             // 
             this.CheckStories.DisplayStatus = false;
-            this.CheckStories.Location = new System.Drawing.Point(538, 420);
+            this.CheckStories.Location = new System.Drawing.Point(538, 378);
             this.CheckStories.Name = "CheckStories";
             this.CheckStories.Size = new System.Drawing.Size(25, 15);
             this.CheckStories.Style = MetroFramework.MetroColorStyle.Black;
@@ -782,7 +702,7 @@ namespace Stalker
             // 
             this.metroLabel21.AutoSize = true;
             this.metroLabel21.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel21.Location = new System.Drawing.Point(452, 126);
+            this.metroLabel21.Location = new System.Drawing.Point(452, 105);
             this.metroLabel21.Name = "metroLabel21";
             this.metroLabel21.Size = new System.Drawing.Size(58, 15);
             this.metroLabel21.Style = MetroFramework.MetroColorStyle.Black;
@@ -793,7 +713,7 @@ namespace Stalker
             // DownloadFiles
             // 
             this.DownloadFiles.DisplayStatus = false;
-            this.DownloadFiles.Location = new System.Drawing.Point(538, 126);
+            this.DownloadFiles.Location = new System.Drawing.Point(538, 105);
             this.DownloadFiles.Name = "DownloadFiles";
             this.DownloadFiles.Size = new System.Drawing.Size(25, 15);
             this.DownloadFiles.Style = MetroFramework.MetroColorStyle.Black;
@@ -819,7 +739,7 @@ namespace Stalker
             // 
             this.metroLabel22.AutoSize = true;
             this.metroLabel22.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel22.Location = new System.Drawing.Point(452, 525);
+            this.metroLabel22.Location = new System.Drawing.Point(452, 483);
             this.metroLabel22.Name = "metroLabel22";
             this.metroLabel22.Size = new System.Drawing.Size(75, 15);
             this.metroLabel22.Style = MetroFramework.MetroColorStyle.Black;
@@ -830,7 +750,7 @@ namespace Stalker
             // DetailedLogs
             // 
             this.DetailedLogs.DisplayStatus = false;
-            this.DetailedLogs.Location = new System.Drawing.Point(538, 525);
+            this.DetailedLogs.Location = new System.Drawing.Point(538, 483);
             this.DetailedLogs.Name = "DetailedLogs";
             this.DetailedLogs.Size = new System.Drawing.Size(25, 15);
             this.DetailedLogs.Style = MetroFramework.MetroColorStyle.Black;
@@ -843,7 +763,7 @@ namespace Stalker
             // 
             this.metroLabel23.AutoSize = true;
             this.metroLabel23.FontSize = MetroFramework.MetroLabelSize.Small;
-            this.metroLabel23.Location = new System.Drawing.Point(452, 504);
+            this.metroLabel23.Location = new System.Drawing.Point(452, 462);
             this.metroLabel23.Name = "metroLabel23";
             this.metroLabel23.Size = new System.Drawing.Size(78, 15);
             this.metroLabel23.Style = MetroFramework.MetroColorStyle.Black;
@@ -854,7 +774,7 @@ namespace Stalker
             // StartOnBoot
             // 
             this.StartOnBoot.DisplayStatus = false;
-            this.StartOnBoot.Location = new System.Drawing.Point(538, 504);
+            this.StartOnBoot.Location = new System.Drawing.Point(538, 462);
             this.StartOnBoot.Name = "StartOnBoot";
             this.StartOnBoot.Size = new System.Drawing.Size(25, 15);
             this.StartOnBoot.Style = MetroFramework.MetroColorStyle.Black;
@@ -864,11 +784,39 @@ namespace Stalker
             this.StartOnBoot.UseSelectable = true;
             this.StartOnBoot.CheckStateChanged += new System.EventHandler(this.StartOnBootChecked);
             // 
+            // metroLabel3
+            // 
+            this.metroLabel3.AutoSize = true;
+            this.metroLabel3.FontSize = MetroFramework.MetroLabelSize.Small;
+            this.metroLabel3.Location = new System.Drawing.Point(452, 231);
+            this.metroLabel3.Name = "metroLabel3";
+            this.metroLabel3.Size = new System.Drawing.Size(78, 15);
+            this.metroLabel3.Style = MetroFramework.MetroColorStyle.Black;
+            this.metroLabel3.TabIndex = 61;
+            this.metroLabel3.Text = "Audio Albums";
+            this.metroLabel3.Theme = MetroFramework.MetroThemeStyle.Dark;
+            // 
+            // CheckAudioAlbums
+            // 
+            this.CheckAudioAlbums.Checked = true;
+            this.CheckAudioAlbums.CheckState = System.Windows.Forms.CheckState.Checked;
+            this.CheckAudioAlbums.DisplayStatus = false;
+            this.CheckAudioAlbums.Location = new System.Drawing.Point(538, 231);
+            this.CheckAudioAlbums.Name = "CheckAudioAlbums";
+            this.CheckAudioAlbums.Size = new System.Drawing.Size(25, 15);
+            this.CheckAudioAlbums.Style = MetroFramework.MetroColorStyle.Black;
+            this.CheckAudioAlbums.TabIndex = 60;
+            this.CheckAudioAlbums.Text = "On";
+            this.CheckAudioAlbums.Theme = MetroFramework.MetroThemeStyle.Dark;
+            this.CheckAudioAlbums.UseSelectable = true;
+            // 
             // Stalker
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(586, 588);
+            this.ClientSize = new System.Drawing.Size(586, 570);
+            this.Controls.Add(this.metroLabel3);
+            this.Controls.Add(this.CheckAudioAlbums);
             this.Controls.Add(this.metroLabel22);
             this.Controls.Add(this.DetailedLogs);
             this.Controls.Add(this.metroLabel23);
@@ -885,29 +833,23 @@ namespace Stalker
             this.Controls.Add(this.CheckPosts);
             this.Controls.Add(this.metroLabel18);
             this.Controls.Add(this.Autostart);
-            this.Controls.Add(this.metroLabel3);
-            this.Controls.Add(this.ClearCookies);
             this.Controls.Add(this.metroLabel17);
             this.Controls.Add(this.SaveToken);
             this.Controls.Add(this.metroLabel16);
             this.Controls.Add(this.CheckOnlineDevice);
             this.Controls.Add(this.metroLabel15);
             this.Controls.Add(this.CheckStatus);
-            this.Controls.Add(this.metroLabel14);
-            this.Controls.Add(this.CheckClips);
             this.Controls.Add(this.metroLabel13);
             this.Controls.Add(this.metroLabel12);
             this.Controls.Add(this.metroLabel11);
-            this.Controls.Add(this.metroLabel10);
             this.Controls.Add(this.metroLabel9);
             this.Controls.Add(this.metroLabel8);
             this.Controls.Add(this.metroLabel7);
             this.Controls.Add(this.metroLabel6);
             this.Controls.Add(this.metroLabel5);
             this.Controls.Add(this.CheckVideos);
-            this.Controls.Add(this.CheckSubscriptions);
+            this.Controls.Add(this.CheckGroups);
             this.Controls.Add(this.CheckPhotos);
-            this.Controls.Add(this.CheckPages);
             this.Controls.Add(this.CheckGifts);
             this.Controls.Add(this.CheckFriends);
             this.Controls.Add(this.CheckFollowers);
@@ -956,29 +898,23 @@ namespace Stalker
         private MetroFramework.Controls.MetroToggle CheckFollowers;
         private MetroFramework.Controls.MetroToggle CheckFriends;
         private MetroFramework.Controls.MetroToggle CheckGifts;
-        private MetroFramework.Controls.MetroToggle CheckPages;
         private MetroFramework.Controls.MetroToggle CheckPhotos;
-        private MetroFramework.Controls.MetroToggle CheckSubscriptions;
+        private MetroFramework.Controls.MetroToggle CheckGroups;
         private MetroFramework.Controls.MetroToggle CheckVideos;
         private MetroFramework.Controls.MetroLabel metroLabel5;
         private MetroFramework.Controls.MetroLabel metroLabel6;
         private MetroFramework.Controls.MetroLabel metroLabel7;
         private MetroFramework.Controls.MetroLabel metroLabel8;
         private MetroFramework.Controls.MetroLabel metroLabel9;
-        private MetroFramework.Controls.MetroLabel metroLabel10;
         private MetroFramework.Controls.MetroLabel metroLabel11;
         private MetroFramework.Controls.MetroLabel metroLabel12;
         private MetroFramework.Controls.MetroLabel metroLabel13;
-        private MetroFramework.Controls.MetroLabel metroLabel14;
-        private MetroFramework.Controls.MetroToggle CheckClips;
         private MetroFramework.Controls.MetroLabel metroLabel15;
         private MetroFramework.Controls.MetroToggle CheckStatus;
         private MetroFramework.Controls.MetroLabel metroLabel16;
         private MetroFramework.Controls.MetroToggle CheckOnlineDevice;
         private MetroFramework.Controls.MetroLabel metroLabel17;
         private MetroFramework.Controls.MetroToggle SaveToken;
-        private MetroFramework.Controls.MetroLabel metroLabel3;
-        private MetroFramework.Controls.MetroToggle ClearCookies;
         private MetroFramework.Controls.MetroLabel metroLabel18;
         private MetroFramework.Controls.MetroToggle Autostart;
         private MetroFramework.Controls.MetroLabel metroLabel19;
@@ -995,6 +931,8 @@ namespace Stalker
         private MetroFramework.Controls.MetroToggle DetailedLogs;
         private MetroFramework.Controls.MetroLabel metroLabel23;
         private MetroFramework.Controls.MetroToggle StartOnBoot;
+        private MetroFramework.Controls.MetroLabel metroLabel3;
+        private MetroFramework.Controls.MetroToggle CheckAudioAlbums;
     }
 }
 
