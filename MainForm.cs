@@ -120,7 +120,7 @@ namespace Stalker
                         if (counters.decoded["status_audio"] != null) counters.decoded.Remove("status_audio");
                     }
 
-                    if ((bool)counters.decoded["is_closed"] != (bool)decoded["is_closed"]) //Check for private profile, if so - then restrict unavailaible toggles
+                    if ((bool)counters.decoded["is_closed"] != (bool)decoded["is_closed"] && !FriendsIdList.Contains((string)counters.decoded["id"]) //Check for private profile, if so - then restrict unavailaible toggles
                     {
                         if ((bool)decoded["is_closed"])
                         {
@@ -222,7 +222,7 @@ namespace Stalker
                             }
                         }
                     }
-                    if (!(bool)counters.decoded["is_closed"]) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
+                    if (!(bool)counters.decoded["is_closed"] && !FriendsIdList.Contains((string)counters.decoded["id"])) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
                     {
                         if (CheckAlbums.Checked && decoded["counters"]["albums"] != null && counters.decoded["counters"]["albums"] != null && (int)counters.decoded["counters"]["albums"] != (int)decoded["counters"]["albums"])
                         {
