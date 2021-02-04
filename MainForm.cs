@@ -3,14 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
 using Newtonsoft.Json.Linq;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.ComponentModel;
 using System.Configuration;
 using System.Data;
-using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -18,12 +14,10 @@ using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using VkNet;
 using VkNet.AudioBypassService.Extensions;
 using VkNet.Enums.Filters;
-using VkNet.Enums.SafetyEnums;
 using VkNet.Model;
 using VkNet.Model.Attachments;
 using VkNet.Model.RequestParams;
@@ -56,8 +50,6 @@ namespace Stalker
                     wc.DownloadFileAsync(link, directory);
             return $"   Downloaded file: {directory}{Environment.NewLine}";
         }
-
-        //private void Get(string uri) { server_response = new WebClient { Encoding = Encoding.UTF8 }.DownloadString(uri); }
         private void FetchFriends()
         {
             var friends = api.Friends.Get(new FriendsGetParams { Fields = ProfileFields.Domain });
@@ -175,7 +167,7 @@ namespace Stalker
                                 break;
                         }
                     counters.ApiCounters = ApiCounters;
-                    if ((bool)ApiCounters[0].IsClosed)
+                    if ((bool)ApiCounters[0].IsClosed && !FriendsIdList.Contains(ApiCounters[0].Id.ToString()))
                     {
                         RestrictToggles(true);
                         WriteToFile($"User has private profile, settings were partially restricted{ Environment.NewLine }");
@@ -184,7 +176,7 @@ namespace Stalker
                 }
                 else //first itteration passed
                 {
-                    if ((bool)counters.ApiCounters[0].IsClosed != (bool)ApiCounters[0].IsClosed) //profile privacy settings changed
+                    if ((bool)counters.ApiCounters[0].IsClosed != (bool)ApiCounters[0].IsClosed && !FriendsIdList.Contains(ApiCounters[0].Id.ToString())) //profile privacy settings changed
                     {
                         if (!(bool)counters.ApiCounters[0].IsClosed && (bool)ApiCounters[0].IsClosed)
                         {
@@ -273,7 +265,7 @@ namespace Stalker
                         }
                     }
 
-                    if (!(bool)ApiCounters[0].IsClosed) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
+                    if (!(bool)ApiCounters[0].IsClosed && !FriendsIdList.Contains(ApiCounters[0].Id.ToString())) //if profile is closed then theres nothing to check! also it comes with "restrict toggles" so this 'if' statement isnt so necessary
                     {
                         if (CheckAlbums.Checked && ApiCounters[0].Counters.Albums != null && counters.ApiCounters[0].Counters.Albums != null && (counters.Albums == null || (int)ApiCounters[0].Counters.Albums != (int)counters.ApiCounters[0].Counters.Albums))
                         {
@@ -606,133 +598,132 @@ namespace Stalker
                          if (post.Attachments != null)
 
                          }
-                 }
-                 else
-                 {
-                     temp_text += $"{ CurrentTime }, Update in posts: { counters.Wall.TotalCount }  to { Wall.TotalCount }{ Environment.NewLine }";
-                     foreach (var id in Wall.WallPosts.Select(x => x.Id).Except(counters.Wall.WallPosts.Select(x => x.Id)))
-                         foreach (Post post in Wall.WallPosts.Where(i => i.Id == id).ToList())
-                         {
-                             temp_text += $"   New post:{Environment.NewLine}   Post author: vk.com/id{post.OwnerId}{ Environment.NewLine }";
-                             if (post.Text != string.Empty)
-                                 temp_text += $"   Post text: {post.Text}{ Environment.NewLine }";
-                             if (post.Attachments != null)
+                            }
+                            else
+                            {
+                                temp_text += $"{ CurrentTime }, Update in posts: { counters.Wall.TotalCount }  to { Wall.TotalCount }{ Environment.NewLine }";
+                                foreach (var id in Wall.WallPosts.Select(x => x.Id).Except(counters.Wall.WallPosts.Select(x => x.Id)))
+                                    foreach (Post post in Wall.WallPosts.Where(i => i.Id == id).ToList())
+                                    {
+                                        temp_text += $"   New post:{Environment.NewLine}   Post author: vk.com/id{post.OwnerId}{ Environment.NewLine }";
+                                        if (post.Text != string.Empty)
+                                            temp_text += $"   Post text: {post.Text}{ Environment.NewLine }";
+                                        if (post.Attachments != null)
 
-                         }
-                 }
-                 if (counters.Wall.TotalCount < Wall.TotalCount)
-                 {
-
-
-                 }
-                 else if
-                 {
-                     foreach (var id in Followers.Select(x => x.Id).Except(counters.Followers.Select(x => x.Id)))
-                         foreach (User follower in Followers.Where(i => i.Id == id).ToList())
-                             temp_text += $"   New follower: {follower.FirstName} {follower.LastName}{Environment.NewLine}"
-                                 + $"   Link: vk.com/id{follower.Id}{ Environment.NewLine }";
-                 }
-                 changed = true;
-                 counters.Wall = Wall;
-             }
-
-             Thread.Sleep(350);
-             Get($"{ApiRequestLink}wall.get?owner_id={user_id}&extended=1&access_token={AuthToken}&v={ApiVersion}");
-             JObject posts = JObject.Parse(server_response);
-             var postsresponse = posts["response"];
-             if (counters.posts_response == null) counters.posts_response = (JObject)postsresponse;
-             else
-             {
-
-                 if (post["attachments"] != null)
-                     foreach (var attachment in post["attachments"])
-                         switch ((string)attachment["type"])
-                         {
-                             case "photo":
-                                 {
-                                     temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
-                                     if (DownloadFiles.Checked)
-                                     {
-                                         link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
-                                         temp_text += $"{_link}{Environment.NewLine}";
-                                     }
-                                 }
-                                 break;
-                             case "video":
-                                 { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
-                                 break;
-                             case "audio":
-                                 { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
-                                 break;
-                             case "link":
-                                 { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
-                                 break;
-                             case "doc":
-                                 {
-                                     temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
-                                     if (DownloadFiles.Checked)
-                                     {
-                                         link = (string)attachment["doc"]["url"];
-                                         temp_text += $"{_link}{Environment.NewLine}";
-                                     }
-                                 }
-                                 break;
-                         }
-             }
-         }
-                     else
-         {
-             List<string> NewPosts = new List<string>();
-             foreach (var post in postsresponse["items"]) NewPosts.Add((string)post["id"]);
-             foreach (var post in counters.posts_response["items"])
-                 if (!NewPosts.Contains((string)post["id"]))
-                 {
-                     temp_text += $"   Removed post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
-                     if (post["text"] != null && (string)post["text"] != "")
-                         temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
-                     if (post["attachments"] != null)
-                         foreach (var attachment in post["attachments"])
-                             switch ((string)attachment["type"])
-                             {
-                                 case "photo":
-                                     {
-                                         temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
-                                         if (DownloadFiles.Checked)
-                                         {
-                                             link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
-                                             temp_text += $"{_link}{Environment.NewLine}";
-                                         }
-                                     }
-                                     break;
-                                 case "video":
-                                     { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
-                                     break;
-                                 case "audio":
-                                     { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
-                                     break;
-                                 case "link":
-                                     { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
-                                     break;
-                                 case "doc":
-                                     {
-                                         temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
-                                         if (DownloadFiles.Checked)
-                                         {
-                                             link = (string)attachment["doc"]["url"];
-                                             temp_text += $"{_link}{Environment.NewLine}";
-                                         }
-                                     }
-                                     break;
-                             }
-                 }
-         }
-         changed = true;
-         counters.posts_response = (JObject)postsresponse;
-         posts_timeout = false;
+                                    }
+                            }
+                            if (counters.Wall.TotalCount < Wall.TotalCount)
+                            {
 
 
-         catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); BeginInvoke(new MethodInvoker(delegate { CheckPosts.Checked = false; })); }
+                            }
+                            else if
+                            {
+                                foreach (var id in Followers.Select(x => x.Id).Except(counters.Followers.Select(x => x.Id)))
+                                    foreach (User follower in Followers.Where(i => i.Id == id).ToList())
+                                        temp_text += $"   New follower: {follower.FirstName} {follower.LastName}{Environment.NewLine}"
+                                            + $"   Link: vk.com/id{follower.Id}{ Environment.NewLine }";
+                            }
+                            changed = true;
+                            counters.Wall = Wall;
+                        }
 
+                        Thread.Sleep(350);
+                        Get($"{ApiRequestLink}wall.get?owner_id={user_id}&extended=1&access_token={AuthToken}&v={ApiVersion}");
+                        JObject posts = JObject.Parse(server_response);
+                        var postsresponse = posts["response"];
+                        if (counters.posts_response == null) counters.posts_response = (JObject)postsresponse;
+                        else
+                        {
+
+                            if (post["attachments"] != null)
+                                foreach (var attachment in post["attachments"])
+                                    switch ((string)attachment["type"])
+                                    {
+                                        case "photo":
+                                            {
+                                                temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                if (DownloadFiles.Checked)
+                                                {
+                                                    link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                    temp_text += $"{_link}{Environment.NewLine}";
+                                                }
+                                            }
+                                            break;
+                                        case "video":
+                                            { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
+                                            break;
+                                        case "audio":
+                                            { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
+                                            break;
+                                        case "link":
+                                            { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
+                                            break;
+                                        case "doc":
+                                            {
+                                                temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                if (DownloadFiles.Checked)
+                                                {
+                                                    link = (string)attachment["doc"]["url"];
+                                                    temp_text += $"{_link}{Environment.NewLine}";
+                                                }
+                                            }
+                                            break;
+                                    }
+                        }
+                        }
+                                else
+                        {
+                        List<string> NewPosts = new List<string>();
+                        foreach (var post in postsresponse["items"]) NewPosts.Add((string)post["id"]);
+                        foreach (var post in counters.posts_response["items"])
+                            if (!NewPosts.Contains((string)post["id"]))
+                            {
+                                temp_text += $"   Removed post:{Environment.NewLine}   Post author: vk.com/id{(string)post["from_id"]}{ Environment.NewLine }";
+                                if (post["text"] != null && (string)post["text"] != "")
+                                    temp_text += $"   Post text: {(string)post["text"]}{ Environment.NewLine }";
+                                if (post["attachments"] != null)
+                                    foreach (var attachment in post["attachments"])
+                                        switch ((string)attachment["type"])
+                                        {
+                                            case "photo":
+                                                {
+                                                    temp_text += $"   Attached image: {(string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"]}{ Environment.NewLine }";
+                                                    if (DownloadFiles.Checked)
+                                                    {
+                                                        link = (string)attachment["photo"]["sizes"][attachment["photo"]["sizes"].Count() - 1]["url"];
+                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                    }
+                                                }
+                                                break;
+                                            case "video":
+                                                { temp_text += $"   Attached video title: {(string)attachment["video"]["title"]}{ Environment.NewLine }   Video ID & Owner ID: {(string)attachment["video"]["id"]} & {(string)attachment["video"]["id"]}{ Environment.NewLine }"; }
+                                                break;
+                                            case "audio":
+                                                { temp_text += $"   Attached audio: {(string)attachment["audio"]["artist"]}   —  {(string)attachment["audio"]["title"]}{ Environment.NewLine }"; }
+                                                break;
+                                            case "link":
+                                                { temp_text += $"   Attached link: {(string)attachment["link"]["url"]}{ Environment.NewLine }"; }
+                                                break;
+                                            case "doc":
+                                                {
+                                                    temp_text += $"   Attached document: {(string)attachment["doc"]["title"]}{ Environment.NewLine }    Document link: {(string)attachment["doc"]["url"]}{ Environment.NewLine }";
+                                                    if (DownloadFiles.Checked)
+                                                    {
+                                                        link = (string)attachment["doc"]["url"];
+                                                        temp_text += $"{_link}{Environment.NewLine}";
+                                                    }
+                                                }
+                                                break;
+                                        }
+                            }
+                        }
+                        changed = true;
+                        counters.posts_response = (JObject)postsresponse;
+                        posts_timeout = false;
+                        catch (Exception e) { WriteToFile($"Exception thrown at posts, probably too many requests were made, {e.Message}{Environment.NewLine}"); BeginInvoke(new MethodInvoker(delegate { CheckPosts.Checked = false; })); }
+                        
+                    
                         if (CheckStories.Checked && stories_timeout)
                         {
                             try
@@ -769,9 +760,123 @@ namespace Stalker
                             }
                             catch (Exception e) { WriteToFile($"Exception thrown at stories check, {e.Message}{Environment.NewLine}"); }
                         }
+                         */
+                        if (CheckStories.Checked && stories_timeout)
+                        {
+                            try
+                            {
+                                Thread.Sleep(350);
+                                string server_response = new WebClient { Encoding = Encoding.UTF8 }.DownloadString($"https://api.vk.com/method/stories.get?owner_id={user_id}&access_token={api.Token}&v=5.126");
+                                JObject stories = JObject.Parse(server_response);
+                                var storiesresponse = stories["response"];
+                                if (counters.stories_response == null) counters.stories_response = (JObject)storiesresponse;
+                                else
+                                {
+                                    if ((int)counters.stories_response["count"] > 0 && (int)storiesresponse["count"] > 0)
+                                        if (counters.stories_response["items"][0]["stories"].Count() != storiesresponse["items"][0]["stories"].Count())
+                                        {
+                                            temp_text += $"{ CurrentTime }, Update in stories: { counters.stories_response["items"][0]["stories"].Count() }  to { storiesresponse["items"][0]["stories"].Count() }{ Environment.NewLine }";
+                                            if (counters.stories_response["items"][0]["stories"].Count() < storiesresponse["items"][0]["stories"].Count())
+                                            {
+                                                List<string> OldStories = new List<string>();
+                                                foreach (var story in counters.stories_response["items"][0]["stories"]) OldStories.Add((string)story["id"]);
+                                                foreach (var story in storiesresponse["items"][0]["stories"])
+                                                    if (!OldStories.Contains((string)story["id"]))
+                                                    {
+                                                        switch ((string)story["type"])
+                                                        {
+                                                            case "photo":
+                                                                {
+                                                                    temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]));
+                                                                }
+                                                                break;
+                                                            case "video":
+                                                                {
+                                                                    temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["video"]["player"]));
+                                                                }
+                                                                break;
+                                                        }
+                                                    }
+                                            }
+                                            else
+                                            {
+                                                List<string> NewStories = new List<string>();
+                                                foreach (var story in storiesresponse["items"][0]["stories"]) NewStories.Add((string)story["id"]);
+                                                foreach (var story in counters.stories_response["items"][0]["stories"])
+                                                    if (!NewStories.Contains((string)story["id"]))
+                                                    {
+                                                        switch ((string)story["type"])
+                                                        {
+                                                            case "photo":
+                                                                {
+                                                                    temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]));
+                                                                }
+                                                                break;
+                                                            case "video":
+                                                                {
+                                                                    temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
+                                                                    if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["video"]["player"]));
+                                                                }
+                                                                break;
+                                                        }
+                                                    }
+                                            }
+                                            changed = true;
+                                        }
+                                        else { }
+                                    else if ((int)counters.stories_response["count"] == 0 && (int)storiesresponse["count"] == 1)
+                                    {
+                                        temp_text += $"{ CurrentTime }, Update in stories: 0  to { storiesresponse["items"][0]["stories"].Count() }{ Environment.NewLine }";
+                                        foreach (var story in storiesresponse["items"][0]["stories"])
+                                            switch ((string)story["type"])
+                                            {
+                                                case "photo":
+                                                    {
+                                                        temp_text += $"   New story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]));
+                                                    }
+                                                    break;
+                                                case "video":
+                                                    {
+                                                        temp_text += $"   New story: {story["video"]["player"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["video"]["player"]));
+                                                    }
+                                                    break;
+                                            }
+                                        changed = true;
+                                    }
+                                    else if ((int)counters.stories_response["count"] == 1 && (int)storiesresponse["count"] == 0)
+                                    {
+                                        temp_text += $"{ CurrentTime }, Update in stories: { counters.stories_response["items"][0]["stories"].Count() }  to 0{ Environment.NewLine }";
+                                        foreach (var story in counters.stories_response["items"][0]["stories"])
+                                            switch ((string)story["type"])
+                                            {
+                                                case "photo":
+                                                    {
+                                                        temp_text += $"   Removed story: {story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["photo"]["sizes"][story["photo"]["sizes"].Count() - 1]["url"]));
+                                                    }
+                                                    break;
+                                                case "video":
+                                                    {
+                                                        temp_text += $"   Removed story: {story["video"]["player"]}{Environment.NewLine}";
+                                                        if (DownloadFiles.Checked) DownloadByLink(new Uri((string)story["video"]["player"]));
+                                                    }
+                                                    break;
+                                            }
+                                        changed = true;
+                                    }
+                                    counters.stories_response = (JObject)storiesresponse;
+                                }
+                                stories_timeout = false;
+                            }
+                            catch (Exception e) { WriteToFile($"Exception thrown at stories check, {e.Message}{Environment.NewLine}"); }
+                        }
                     }
-                    */
-                    }
+
                     if (changed) EventLogs.Invoke((MethodInvoker)delegate
                     {
                         if (EventLogs.Text[EventLogs.Text.Length - 1] == '—') temp_text = $"  { OnlineDateTime }{ Environment.NewLine }" + temp_text;
@@ -823,7 +928,9 @@ namespace Stalker
                     CheckPhotos.Checked = CheckPhotos.Enabled =
                     CheckPosts.Checked = CheckPosts.Enabled =
                     CheckGroups.Checked = CheckGroups.Enabled =
-                    CheckVideos.Checked = CheckVideos.Enabled = false;
+                    CheckVideos.Checked = CheckVideos.Enabled = 
+                    CheckStories.Checked = CheckStories.Enabled =
+                    CheckFriends.Checked = CheckFriends.Enabled = false;
                 }));
             }
             else
@@ -833,7 +940,8 @@ namespace Stalker
                     CheckAlbums.Enabled = CheckAudios.Enabled =
                     CheckFollowers.Enabled = CheckGifts.Enabled = 
                     CheckPhotos.Enabled = CheckPosts.Enabled = 
-                    CheckGroups.Enabled = CheckVideos.Enabled = 
+                    CheckGroups.Enabled = CheckVideos.Enabled =
+                    CheckStories.Enabled = CheckFriends.Enabled = 
                     CheckAudioAlbums.Enabled = true;
                 }));
             }
@@ -1038,6 +1146,7 @@ namespace Stalker
         public StoryResult<IEnumerable<Story>> Stories = null;
         public Status Status = null;
         public string OnlineApp = null;
+        public JObject stories_response = null;
         public WallGetObject Wall = null;
         public List<PostWithLikes> PostsWithLikesList = new List<PostWithLikes>();
         public struct PostWithLikes
