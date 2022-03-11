@@ -120,7 +120,7 @@ namespace Stalker
                         if (counters.decoded["status_audio"] != null) counters.decoded.Remove("status_audio");
                     }
 
-                    if ((bool)counters.decoded["is_closed"] != (bool)decoded["is_closed"] && !FriendsIdList.Contains((string)counters.decoded["id"]) //Check for private profile, if so - then restrict unavailaible toggles
+                    if ((bool)counters.decoded["is_closed"] != (bool)decoded["is_closed"] && !FriendsIdList.Contains((string)counters.decoded["id"])) //Check for private profile, if so - then restrict unavailaible toggles
                     {
                         if ((bool)decoded["is_closed"])
                         {
